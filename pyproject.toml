@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "app-name"
+name = "hbn-preprocess"
 version = "0.1.0"
-description = "A beautiful description."
-authors = ["Reinder Vos de Wael <reinder.vosdewael@childmind.org>"]
-license = "LGPL-2.1"
+description = "A repo for cleaning and pivoting the hbh clinician consensus data for analysis."
+authors = ["maya-roberts <maya36247@gmail.com>"]
+license = ""
 readme = "README.md"
-packages = [{include = "APP_NAME", from = "src"}]
+packages = [{include = "hbn-preprocess", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "~3.11"
