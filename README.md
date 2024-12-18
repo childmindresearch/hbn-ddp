@@ -8,13 +8,10 @@
 ![stability-stable](https://img.shields.io/badge/stability-stable-green.svg)
 [![pages](https://img.shields.io/badge/api-docs-blue)](https://childmindresearch.github.io/hbn-preprocess)
 
-What problem does this tool solve?
-
 ## Features
 
 - Diagnostic data cleaning: Fixes known errors and missing values in the dataset.
 - Diagnostic data preprocessing: Pivots the data to a wider format, organized by specific diagnoses rather than diagnosis numbers. Includes the option to filter by diagnostic certainty level or time of diagnosis. Option to either run interactively or install as a package and use in a notebook.
-- Things
 
 ## Installation
 
