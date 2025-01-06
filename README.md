@@ -29,6 +29,6 @@ pip install git+https://github.com/childmindresearch/hbn-preprocess
 
 ## Quick start
 
-Notebook example: https://github.com/childmindresearch/hbn-preprocessing/examples/pivot_run_example.ipynb
+Notebook example: https://github.com/childmindresearch/hbn-preprocessing/examples/pivot_example.ipynb
 
 ## Links or References

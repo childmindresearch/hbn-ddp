@@ -9,6 +9,8 @@ packages = [{include = "hbn-preprocess", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "~3.11"
+matplotlib = "^3.10.0"
+pandas = "^2.2.3"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.3"
