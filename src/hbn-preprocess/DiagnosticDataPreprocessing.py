@@ -158,8 +158,9 @@ class Diag_Preprocess:
 
     def diagnoses(self: "Diag_Preprocess") -> None:
         """Pivot the dataset on diagnoses."""
-        repeated_vars = ["_Cat", "_Sub", "_PRem", "_Rem", "_Spec", "_Code"]
+        repeated_vars = ["_Cat", "_Sub", "_Spec", "_Code", "_Past_Doc"]
         for d in self.dxes:
+            print(d)
             d_cleaned = (
                 d.strip()
                 .replace(" ", "_")
@@ -186,43 +187,43 @@ class Diag_Preprocess:
             for i, n in itertools.product(range(0, len(self.df)), self.dx_ns):
                 col = "Diagnosis_ClinicianConsensus,DX_" + str(n)
                 # locate presence of specific diagnosis
-                if self.df.loc[i, str(col)] == d:
+                if self.df.at[i, str(col)] == d:
                     # set certainty
-                    if self.df.loc[i, str(col) + "_ByHx"] == 1:
+                    if self.df.at[i, str(col) + "_ByHx"] == 1:
                         cert = "ByHx"
                     elif all(
                         [
-                            self.df.loc[i, str(col) + "_Confirmed"] == 1,
-                            self.df.loc[i, str(col) + "_Presum"] != 1,
-                            self.df.loc[i, str(col) + "_RC"] != 1,
-                            self.df.loc[i, str(col) + "_RuleOut"] != 1,
+                            self.df.at[i, str(col) + "_Confirmed"] == 1,
+                            self.df.at[i, str(col) + "_Presum"] != 1,
+                            self.df.at[i, str(col) + "_RC"] != 1,
+                            self.df.at[i, str(col) + "_RuleOut"] != 1,
                         ]
                     ):
                         cert = "Confirmed"
                     elif all(
                         [
-                            self.df.loc[i, str(col) + "_Confirmed"] != 1,
-                            self.df.loc[i, str(col) + "_Presum"] == 1,
-                            self.df.loc[i, str(col) + "_RC"] != 1,
-                            self.df.loc[i, str(col) + "_RuleOut"] != 1,
+                            self.df.at[i, str(col) + "_Confirmed"] != 1,
+                            self.df.at[i, str(col) + "_Presum"] == 1,
+                            self.df.at[i, str(col) + "_RC"] != 1,
+                            self.df.at[i, str(col) + "_RuleOut"] != 1,
                         ]
                     ):
                         cert = "Presumptive"
                     elif all(
                         [
-                            self.df.loc[i, str(col) + "_Confirmed"] != 1,
-                            self.df.loc[i, str(col) + "_Presum"] != 1,
-                            self.df.loc[i, str(col) + "_RC"] == 1,
-                            self.df.loc[i, str(col) + "_RuleOut"] != 1,
+                            self.df.at[i, str(col) + "_Confirmed"] != 1,
+                            self.df.at[i, str(col) + "_Presum"] != 1,
+                            self.df.at[i, str(col) + "_RC"] == 1,
+                            self.df.at[i, str(col) + "_RuleOut"] != 1,
                         ]
                     ):
                         cert = "RC"
                     elif all(
                         [
-                            self.df.loc[i, str(col) + "_Confirmed"] != 1,
-                            self.df.loc[i, str(col) + "_Presum"] != 1,
-                            self.df.loc[i, str(col) + "_RC"] != 1,
-                            self.df.loc[i, str(col) + "_RuleOut"] == 1,
+                            self.df.at[i, str(col) + "_Confirmed"] != 1,
+                            self.df.at[i, str(col) + "_Presum"] != 1,
+                            self.df.at[i, str(col) + "_RC"] != 1,
+                            self.df.at[i, str(col) + "_RuleOut"] == 1,
                         ]
                     ):
                         cert = "RuleOut"
@@ -230,12 +231,12 @@ class Diag_Preprocess:
                     # these are past diagnoses noted in Past_Doc
                     elif all(
                         [
-                            self.df.loc[i, str(col) + "_Time"] == 2,
-                            self.df.loc[i, str(col) + "_Confirmed"] == 0,
-                            self.df.loc[i, str(col) + "_Presum"] == 0,
-                            self.df.loc[i, str(col) + "_RC"] == 0,
-                            self.df.loc[i, str(col) + "_RuleOut"] == 0,
-                            self.df.loc[i, str(col) + "_ByHx"] != 1,
+                            self.df.at[i, str(col) + "_Time"] == 2,
+                            self.df.at[i, str(col) + "_Confirmed"] == 0,
+                            self.df.at[i, str(col) + "_Presum"] == 0,
+                            self.df.at[i, str(col) + "_RC"] == 0,
+                            self.df.at[i, str(col) + "_RuleOut"] == 0,
+                            self.df.at[i, str(col) + "_ByHx"] != 1,
                         ]
                     ):
                         cert = "N/A"
@@ -244,43 +245,43 @@ class Diag_Preprocess:
                     else:
                         cert = "Unknown"
                     # set time
-                    if self.df.loc[i, str(col) + "_Time"] == 1:
+                    if self.df.at[i, str(col) + "_Time"] == 1:
                         time = "Current"
-                    elif self.df.loc[i, str(col) + "_Time"] == 2:
+                    elif self.df.at[i, str(col) + "_Time"] == 2:
                         time = "Past"
                     # apply certainty filter if selected and set presence of diagnosis
                     if self.cert_filter_applied and not self.time_filter_applied:
                         if any([cert == x for x in self.cert_filter]):
                             self.new_df = self.new_df.copy()
-                            self.new_df.loc[i, str(d_cleaned) + "_DiagnosisPresent"] = 1
+                            self.new_df.at[i, str(d_cleaned) + "_DiagnosisPresent"] = 1
                             # variables repeated by diagnosis
                             for var in repeated_vars:
                                 self.new_df = self.new_df.copy()
-                                self.new_df.loc[i, str(d_cleaned) + str(var)] = (
-                                    self.df.loc[i, str(col) + str(var)]
+                                self.new_df.at[i, str(d_cleaned) + str(var)] = (
+                                    self.df.at[i, str(col) + str(var)]
                                 )
                             # add certainty to DataFrame
                             self.new_df = self.new_df.copy()
-                            self.new_df.loc[i, str(d_cleaned) + "_Certainty"] = cert
+                            self.new_df.at[i, str(d_cleaned) + "_Certainty"] = cert
                             # add time to DataFrame
                             self.new_df = self.new_df.copy()
-                            self.new_df.loc[i, str(d_cleaned) + "_Time"] = time
+                            self.new_df.at[i, str(d_cleaned) + "_Time"] = time
                     elif self.time_filter_applied and not self.cert_filter_applied:
                         if any([time == x for x in self.time_filter]):
                             self.new_df = self.new_df.copy()
-                            self.new_df.loc[i, str(d_cleaned) + "_DiagnosisPresent"] = 1
+                            self.new_df.at[i, str(d_cleaned) + "_DiagnosisPresent"] = 1
                             # variables repeated by diagnosis
                             for var in repeated_vars:
                                 self.new_df = self.new_df.copy()
-                                self.new_df.loc[i, str(d_cleaned) + str(var)] = (
-                                    self.df.loc[i, str(col) + str(var)]
+                                self.new_df.at[i, str(d_cleaned) + str(var)] = (
+                                    self.df.at[i, str(col) + str(var)]
                                 )
                             # add certainty to DataFrame
                             self.new_df = self.new_df.copy()
-                            self.new_df.loc[i, str(d_cleaned) + "_Certainty"] = cert
+                            self.new_df.at[i, str(d_cleaned) + "_Certainty"] = cert
                             # add time to DataFrame
                             self.new_df = self.new_df.copy()
-                            self.new_df.loc[i, str(d_cleaned) + "_Time"] = time
+                            self.new_df.at[i, str(d_cleaned) + "_Time"] = time
                     elif self.time_filter_applied and self.cert_filter_applied:
                         if all(
                             [
@@ -289,39 +290,40 @@ class Diag_Preprocess:
                             ]
                         ):
                             self.new_df = self.new_df.copy()
-                            self.new_df.loc[i, str(d_cleaned) + "_DiagnosisPresent"] = 1
+                            self.new_df.at[i, str(d_cleaned) + "_DiagnosisPresent"] = 1
                             # variables repeated by diagnosis
                             for var in repeated_vars:
                                 self.new_df = self.new_df.copy()
-                                self.new_df.loc[i, str(d_cleaned) + str(var)] = (
-                                    self.df.loc[i, str(col) + str(var)]
+                                self.new_df.at[i, str(d_cleaned) + str(var)] = (
+                                    self.df.at[i, str(col) + str(var)]
                                 )
                             # add certainty to DataFrame
                             self.new_df = self.new_df.copy()
-                            self.new_df.loc[i, str(d_cleaned) + "_Certainty"] = cert
+                            self.new_df.at[i, str(d_cleaned) + "_Certainty"] = cert
                             # add time to DataFrame
                             self.new_df = self.new_df.copy()
-                            self.new_df.loc[i, str(d_cleaned) + "_Time"] = time
+                            self.new_df.at[i, str(d_cleaned) + "_Time"] = time
                     # no certainty filter set
                     else:
                         self.new_df = self.new_df.copy()
-                        self.new_df.loc[i, str(d_cleaned) + "_DiagnosisPresent"] = 1
+                        self.new_df.at[i, str(d_cleaned) + "_DiagnosisPresent"] = 1
                         # variables repeated by diagnosis
                         for var in repeated_vars:
                             self.new_df = self.new_df.copy()
-                            self.new_df.loc[i, str(d_cleaned) + str(var)] = self.df.loc[
+                            self.new_df.at[i, str(d_cleaned) + str(var)] = self.df.at[
                                 i, str(col) + str(var)
                             ]
                         # add certainty to DataFrame
                         self.new_df = self.new_df.copy()
-                        self.new_df.loc[i, str(d_cleaned) + "_Certainty"] = cert
+                        self.new_df.at[i, str(d_cleaned) + "_Certainty"] = cert
                         # add time to DataFrame
                         self.new_df = self.new_df.copy()
-                        self.new_df.loc[i, str(d_cleaned) + "_Time"] = time
+                        self.new_df.at[i, str(d_cleaned) + "_Time"] = time
 
     def subcategories(self: "Diag_Preprocess", include_details: bool = True) -> None:
         """Pivot the dataset on diagnostic subcategories."""
         for s in self.subs:
+            print(s)
             s_cleaned = (
                 s.strip()
                 .replace(" ", "")
@@ -348,43 +350,43 @@ class Diag_Preprocess:
                 sub_details = []
                 for n in self.dx_ns:
                     col = "Diagnosis_ClinicianConsensus,DX_" + str(n)
-                    if self.df.loc[i, str(col) + "_Sub"] == s:
+                    if self.df.at[i, str(col) + "_Sub"] == s:
                         # set certainty
-                        if self.df.loc[i, str(col) + "_ByHx"] == 1:
+                        if self.df.at[i, str(col) + "_ByHx"] == 1:
                             cert = "ByHx"
                         elif all(
                             [
-                                self.df.loc[i, str(col) + "_Confirmed"] == 1,
-                                self.df.loc[i, str(col) + "_Presum"] != 1,
-                                self.df.loc[i, str(col) + "_RC"] != 1,
-                                self.df.loc[i, str(col) + "_RuleOut"] != 1,
+                                self.df.at[i, str(col) + "_Confirmed"] == 1,
+                                self.df.at[i, str(col) + "_Presum"] != 1,
+                                self.df.at[i, str(col) + "_RC"] != 1,
+                                self.df.at[i, str(col) + "_RuleOut"] != 1,
                             ]
                         ):
                             cert = "Confirmed"
                         elif all(
                             [
-                                self.df.loc[i, str(col) + "_Confirmed"] != 1,
-                                self.df.loc[i, str(col) + "_Presum"] == 1,
-                                self.df.loc[i, str(col) + "_RC"] != 1,
-                                self.df.loc[i, str(col) + "_RuleOut"] != 1,
+                                self.df.at[i, str(col) + "_Confirmed"] != 1,
+                                self.df.at[i, str(col) + "_Presum"] == 1,
+                                self.df.at[i, str(col) + "_RC"] != 1,
+                                self.df.at[i, str(col) + "_RuleOut"] != 1,
                             ]
                         ):
                             cert = "Presumptive"
                         elif all(
                             [
-                                self.df.loc[i, str(col) + "_Confirmed"] != 1,
-                                self.df.loc[i, str(col) + "_Presum"] != 1,
-                                self.df.loc[i, str(col) + "_RC"] == 1,
-                                self.df.loc[i, str(col) + "_RuleOut"] != 1,
+                                self.df.at[i, str(col) + "_Confirmed"] != 1,
+                                self.df.at[i, str(col) + "_Presum"] != 1,
+                                self.df.at[i, str(col) + "_RC"] == 1,
+                                self.df.at[i, str(col) + "_RuleOut"] != 1,
                             ]
                         ):
                             cert = "RC"
                         elif all(
                             [
-                                self.df.loc[i, str(col) + "_Confirmed"] != 1,
-                                self.df.loc[i, str(col) + "_Presum"] != 1,
-                                self.df.loc[i, str(col) + "_RC"] != 1,
-                                self.df.loc[i, str(col) + "_RuleOut"] == 1,
+                                self.df.at[i, str(col) + "_Confirmed"] != 1,
+                                self.df.at[i, str(col) + "_Presum"] != 1,
+                                self.df.at[i, str(col) + "_RC"] != 1,
+                                self.df.at[i, str(col) + "_RuleOut"] == 1,
                             ]
                         ):
                             cert = "RuleOut"
@@ -392,12 +394,12 @@ class Diag_Preprocess:
                         # these are past diagnoses noted in Past_Doc
                         elif all(
                             [
-                                self.df.loc[i, str(col) + "_Time"] == 2,
-                                self.df.loc[i, str(col) + "_Confirmed"] == 0,
-                                self.df.loc[i, str(col) + "_Presum"] == 0,
-                                self.df.loc[i, str(col) + "_RC"] == 0,
-                                self.df.loc[i, str(col) + "_RuleOut"] == 0,
-                                self.df.loc[i, str(col) + "_ByHx"] != 1,
+                                self.df.at[i, str(col) + "_Time"] == 2,
+                                self.df.at[i, str(col) + "_Confirmed"] == 0,
+                                self.df.at[i, str(col) + "_Presum"] == 0,
+                                self.df.at[i, str(col) + "_RC"] == 0,
+                                self.df.at[i, str(col) + "_RuleOut"] == 0,
+                                self.df.at[i, str(col) + "_ByHx"] != 1,
                             ]
                         ):
                             cert = "N/A"
@@ -407,24 +409,26 @@ class Diag_Preprocess:
                         else:
                             cert = "Unknown"
                         # set time
-                        if self.df.loc[i, str(col) + "_Time"] == 1:
+                        if self.df.at[i, str(col) + "_Time"] == 1:
                             time = "Current"
-                        elif self.df.loc[i, str(col) + "_Time"] == 2:
+                        elif self.df.at[i, str(col) + "_Time"] == 2:
                             time = "Past"
-                        # set specific diagnosis and code
-                        d = self.df.loc[i, str(col)]
-                        code = self.df.loc[i, str(col) + "_Code"]
+                        # set specific diagnosis, code and past documentation
+                        d = self.df.at[i, str(col)]
+                        code = self.df.at[i, str(col) + "_Code"]
+                        past_doc = self.df.at[i, str(col) + "_Past_Doc"]
                         # create dictionary to store details on a diagnostic level
                         sub_dict = {
                             "diagnosis": d,
                             "code": code,
                             "certainty": cert,
                             "time": time,
+                            "past_documentation": past_doc,
                         }
                         if self.cert_filter_applied and not self.time_filter_applied:
                             if any([cert == x for x in self.cert_filter]):
                                 self.new_df = self.new_df.copy()
-                                self.new_df.loc[
+                                self.new_df.at[
                                     i, str(s_cleaned) + "_SubcategoryPresent"
                                 ] = 1
                                 # add diagnosis level details
@@ -432,8 +436,8 @@ class Diag_Preprocess:
                                 # add higher level category
                                 if include_details:
                                     self.new_df = self.new_df.copy()
-                                    self.new_df.loc[i, str(s_cleaned) + "_Cat"] = (
-                                        self.df.loc[
+                                    self.new_df.at[i, str(s_cleaned) + "_Cat"] = (
+                                        self.df.at[
                                             i,
                                             "Diagnosis_ClinicianConsensus,DX_"
                                             + str(n)
@@ -443,7 +447,7 @@ class Diag_Preprocess:
                         elif self.time_filter_applied and not self.cert_filter_applied:
                             if any([time == x for x in self.time_filter]):
                                 self.new_df = self.new_df.copy()
-                                self.new_df.loc[
+                                self.new_df.at[
                                     i, str(s_cleaned) + "_SubcategoryPresent"
                                 ] = 1
                                 # add diagnosis level details
@@ -451,8 +455,8 @@ class Diag_Preprocess:
                                 # add higher level category
                                 if include_details:
                                     self.new_df = self.new_df.copy()
-                                    self.new_df.loc[i, str(s_cleaned) + "_Cat"] = (
-                                        self.df.loc[
+                                    self.new_df.at[i, str(s_cleaned) + "_Cat"] = (
+                                        self.df.at[
                                             i,
                                             "Diagnosis_ClinicianConsensus,DX_"
                                             + str(n)
@@ -467,7 +471,7 @@ class Diag_Preprocess:
                                 ]
                             ):
                                 self.new_df = self.new_df.copy()
-                                self.new_df.loc[
+                                self.new_df.at[
                                     i, str(s_cleaned) + "_SubcategoryPresent"
                                 ] = 1
                                 # add diagnosis level details
@@ -475,8 +479,8 @@ class Diag_Preprocess:
                                 # add higher level category
                                 if include_details:
                                     self.new_df = self.new_df.copy()
-                                    self.new_df.loc[i, str(s_cleaned) + "_Cat"] = (
-                                        self.df.loc[
+                                    self.new_df.at[i, str(s_cleaned) + "_Cat"] = (
+                                        self.df.at[
                                             i,
                                             "Diagnosis_ClinicianConsensus,DX_"
                                             + str(n)
@@ -485,7 +489,7 @@ class Diag_Preprocess:
                                     )
                         else:
                             self.new_df = self.new_df.copy()
-                            self.new_df.loc[
+                            self.new_df.at[
                                 i, str(s_cleaned) + "_SubcategoryPresent"
                             ] = 1
                             # add diagnosis level details
@@ -493,8 +497,8 @@ class Diag_Preprocess:
                             # add higher level category
                             if include_details:
                                 self.new_df = self.new_df.copy()
-                                self.new_df.loc[i, str(s_cleaned) + "_Category"] = (
-                                    self.df.loc[
+                                self.new_df.at[i, str(s_cleaned) + "_Category"] = (
+                                    self.df.at[
                                         i,
                                         "Diagnosis_ClinicianConsensus,DX_"
                                         + str(n)
@@ -504,13 +508,14 @@ class Diag_Preprocess:
                 # add subcategory details to DataFrame
                 if all([len(sub_details) > 0, include_details]):
                     self.new_df = self.new_df.copy()
-                    self.new_df.loc[i, str(s_cleaned) + "_Details"] = str(
+                    self.new_df.at[i, str(s_cleaned) + "_Details"] = str(
                         sub_details
                     ).strip("[]")
 
     def categories(self: "Diag_Preprocess", include_details: bool = True) -> None:
         """Pivot the data on diagnostic categories."""
         for c in self.cats:
+            print(c)
             c_cleaned = (
                 c.strip()
                 .replace(" ", "")
@@ -532,44 +537,44 @@ class Diag_Preprocess:
                 cat_details = []
                 for n in self.dx_ns:
                     col = "Diagnosis_ClinicianConsensus,DX_" + str(n)
-                    if self.df.loc[i, str(col) + "_Cat"] == c:
+                    if self.df.at[i, str(col) + "_Cat"] == c:
                         # set certainty
-                        if self.df.loc[i, str(col) + "_ByHx"] == 1:
+                        if self.df.at[i, str(col) + "_ByHx"] == 1:
                             cert = "ByHx"
                         elif all(
                             [
-                                self.df.loc[i, str(col) + "_Confirmed"] == 1,
-                                self.df.loc[i, str(col) + "_Presum"] != 1,
-                                self.df.loc[i, str(col) + "_RC"] != 1,
-                                self.df.loc[i, str(col) + "_RuleOut"] != 1,
+                                self.df.at[i, str(col) + "_Confirmed"] == 1,
+                                self.df.at[i, str(col) + "_Presum"] != 1,
+                                self.df.at[i, str(col) + "_RC"] != 1,
+                                self.df.at[i, str(col) + "_RuleOut"] != 1,
                             ]
                         ):
                             cert = "Confirmed"
 
                         elif all(
                             [
-                                self.df.loc[i, str(col) + "_Confirmed"] != 1,
-                                self.df.loc[i, str(col) + "_Presum"] == 1,
-                                self.df.loc[i, str(col) + "_RC"] != 1,
-                                self.df.loc[i, str(col) + "_RuleOut"] != 1,
+                                self.df.at[i, str(col) + "_Confirmed"] != 1,
+                                self.df.at[i, str(col) + "_Presum"] == 1,
+                                self.df.at[i, str(col) + "_RC"] != 1,
+                                self.df.at[i, str(col) + "_RuleOut"] != 1,
                             ]
                         ):
                             cert = "Presumptive"
                         elif all(
                             [
-                                self.df.loc[i, str(col) + "_Confirmed"] != 1,
-                                self.df.loc[i, str(col) + "_Presum"] != 1,
-                                self.df.loc[i, str(col) + "_RC"] == 1,
-                                self.df.loc[i, str(col) + "_RuleOut"] != 1,
+                                self.df.at[i, str(col) + "_Confirmed"] != 1,
+                                self.df.at[i, str(col) + "_Presum"] != 1,
+                                self.df.at[i, str(col) + "_RC"] == 1,
+                                self.df.at[i, str(col) + "_RuleOut"] != 1,
                             ]
                         ):
                             cert = "RC"
                         elif all(
                             [
-                                self.df.loc[i, str(col) + "_Confirmed"] != 1,
-                                self.df.loc[i, str(col) + "_Presum"] != 1,
-                                self.df.loc[i, str(col) + "_RC"] != 1,
-                                self.df.loc[i, str(col) + "_RuleOut"] == 1,
+                                self.df.at[i, str(col) + "_Confirmed"] != 1,
+                                self.df.at[i, str(col) + "_Presum"] != 1,
+                                self.df.at[i, str(col) + "_RC"] != 1,
+                                self.df.at[i, str(col) + "_RuleOut"] == 1,
                             ]
                         ):
                             cert = "RuleOut"
@@ -577,12 +582,12 @@ class Diag_Preprocess:
                         # these are past diagnoses noted in Past_Doc
                         elif all(
                             [
-                                self.df.loc[i, str(col) + "_Time"] == 2,
-                                self.df.loc[i, str(col) + "_Confirmed"] == 0,
-                                self.df.loc[i, str(col) + "_Presum"] == 0,
-                                self.df.loc[i, str(col) + "_RC"] == 0,
-                                self.df.loc[i, str(col) + "_RuleOut"] == 0,
-                                self.df.loc[i, str(col) + "_ByHx"] != 1,
+                                self.df.at[i, str(col) + "_Time"] == 2,
+                                self.df.at[i, str(col) + "_Confirmed"] == 0,
+                                self.df.at[i, str(col) + "_Presum"] == 0,
+                                self.df.at[i, str(col) + "_RC"] == 0,
+                                self.df.at[i, str(col) + "_RuleOut"] == 0,
+                                self.df.at[i, str(col) + "_ByHx"] != 1,
                             ]
                         ):
                             cert = "N/A"
@@ -590,14 +595,15 @@ class Diag_Preprocess:
                         else:
                             cert = "Unknown"
                         # set time
-                        if self.df.loc[i, str(col) + "_Time"] == 1:
+                        if self.df.at[i, str(col) + "_Time"] == 1:
                             time = "Current"
-                        elif self.df.loc[i, str(col) + "_Time"] == 2:
+                        elif self.df.at[i, str(col) + "_Time"] == 2:
                             time = "Past"
-                        # set specific diagnosis, subcategory, and code
-                        d = self.df.loc[i, str(col)]
-                        code = self.df.loc[i, str(col) + "_Code"]
-                        sub = self.df.loc[i, str(col) + "_Sub"]
+                        # set specific diagnosis, subcategory, code and past doc
+                        d = self.df.at[i, str(col)]
+                        code = self.df.at[i, str(col) + "_Code"]
+                        sub = self.df.at[i, str(col) + "_Sub"]
+                        past_doc = self.df.at[i, str(col) + "_Past_Doc"]
                         # create dictionary to store details on a diagnostic level
                         cat_dict = {
                             "diagnosis": d,
@@ -605,11 +611,12 @@ class Diag_Preprocess:
                             "code": code,
                             "certainty": cert,
                             "time": time,
+                            "past_documentation": past_doc,
                         }
                         if self.cert_filter_applied and not self.time_filter_applied:
                             if any([cert == x for x in self.cert_filter]):
                                 self.new_df = self.new_df.copy()
-                                self.new_df.loc[
+                                self.new_df.at[
                                     i, str(c_cleaned) + "_CategoryPresent"
                                 ] = 1
                                 # add diagnosis level details
@@ -617,7 +624,7 @@ class Diag_Preprocess:
                         elif self.time_filter_applied and not self.cert_filter_applied:
                             if any([time == x for x in self.time_filter]):
                                 self.new_df = self.new_df.copy()
-                                self.new_df.loc[
+                                self.new_df.at[
                                     i, str(c_cleaned) + "_CategoryPresent"
                                 ] = 1
                                 # add diagnosis level details
@@ -630,20 +637,20 @@ class Diag_Preprocess:
                                 ]
                             ):
                                 self.new_df = self.new_df.copy()
-                                self.new_df.loc[
+                                self.new_df.at[
                                     i, str(c_cleaned) + "_CategoryPresent"
                                 ] = 1
                                 # add diagnosis level details
                                 cat_details.append(cat_dict)
                         else:
                             self.new_df = self.new_df.copy()
-                            self.new_df.loc[i, str(c_cleaned) + "_CategoryPresent"] = 1
+                            self.new_df.at[i, str(c_cleaned) + "_CategoryPresent"] = 1
                             # add diagnosis level details
                             cat_details.append(cat_dict)
                 # add category details to DataFrame
                 if all([len(cat_details) > 0, include_details]):
                     self.new_df = self.new_df.copy()
-                    self.new_df.loc[i, str(c_cleaned) + "_Details"] = str(
+                    self.new_df.at[i, str(c_cleaned) + "_Details"] = str(
                         cat_details
                     ).strip("[]")
 
