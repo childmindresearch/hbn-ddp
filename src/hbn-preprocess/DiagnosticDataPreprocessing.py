@@ -14,7 +14,7 @@ class Diag_Preprocess:
 
     def __init__(
         self: "Diag_Preprocess",
-        hbn_data_path: typing.Optional[str] = None,
+        hbn_data_path: str,
     ) -> None:
         """Initializes a class for HBN data preprocessing.
 
@@ -22,9 +22,10 @@ class Diag_Preprocess:
             hbn_data_path (str): Path to the HBN data file.
 
         """
-        if hbn_data_path is None:
-            print("Please enter the path to the HBN data file.")
-            hbn_data_path = input()
+        # if hbn_data_path is None:
+        #     print("Please enter the path to the HBN data file.")
+        #     hbn_data_path = input()
+        self.input_path = hbn_data_path
         df = pd.read_csv(hbn_data_path, low_memory=False)
 
         dx_ns = ["0" + str(n) for n in range(1, 10)]
@@ -416,7 +417,10 @@ class Diag_Preprocess:
                         # set specific diagnosis, code and past documentation
                         d = self.df.at[i, str(col)]
                         code = self.df.at[i, str(col) + "_Code"]
-                        past_doc = self.df.at[i, str(col) + "_Past_Doc"]
+                        if pd.isna(self.df.at[i, str(col) + "_Past_Doc"]):
+                            past_doc = ""
+                        else:
+                            past_doc = str(int(self.df.at[i, str(col) + "_Past_Doc"]))
                         # create dictionary to store details on a diagnostic level
                         sub_dict = {
                             "diagnosis": d,
@@ -603,7 +607,10 @@ class Diag_Preprocess:
                         d = self.df.at[i, str(col)]
                         code = self.df.at[i, str(col) + "_Code"]
                         sub = self.df.at[i, str(col) + "_Sub"]
-                        past_doc = self.df.at[i, str(col) + "_Past_Doc"]
+                        if pd.isna(self.df.at[i, str(col) + "_Past_Doc"]):
+                            past_doc = ""
+                        else:
+                            past_doc = str(int(self.df.at[i, str(col) + "_Past_Doc"]))
                         # create dictionary to store details on a diagnostic level
                         cat_dict = {
                             "diagnosis": d,
@@ -734,22 +741,21 @@ class Diag_Preprocess:
 
     def run(
         self: "Diag_Preprocess",
+        output_path: str,
         interactive: bool = True,
-        pivot_by: typing.Optional[str] = None,
-        viz: bool = False,
+        pivot_by: str = "all",
         cert_filter: typing.Optional[list] = None,
         time_filter: typing.Optional[list] = None,
-        output_path: typing.Optional[str] = None,
+        viz: bool = False,
     ) -> pd.DataFrame:
         """Runs the preprocessing of clinician consensus diagnostic data.
 
         Args:
-            interactive (bool): Whether to interactively filter the data.
-            pivot_by (str): The level of data to pivot on.
-            Options are "diagnoses", "subcategories", "categories", or "all".
-            viz (bool): Whether to visualize the data by plotting counts of each
-            diagnosis or category. Default is False.
-            output_path (str): The path to save the data to if desired. Default is None.
+            interactive (bool): Whether to interactively filter the data rather than
+            setting parameters. Default is True.
+            output_path (str): The path to save the data.
+            pivot_by (str): The level of data to pivot on. Options are "diagnoses",
+            "subcategories", "categories", or "all". Default is "all".
             cert_filter (list): If interactive filtering is not used, a list of
             diagnostic certainties to include in the data. Options are "Confirmed",
             "Presumptive", "RC", "RuleOut", "ByHx", and "Unknown". Default is None,
@@ -757,11 +763,13 @@ class Diag_Preprocess:
             time_filter (list): If interactive filtering is not used, a list of
             diagnostic times to include in the data. Options are "Current" and "Past".
             Default is None, which will not apply a filter.
+            viz (bool): Whether to visualize the data by plotting counts of each
+            diagnosis or category. Default is False.
 
         Returns:
             DataFrame: The preprocessed data.
         """
-        if pivot_by is None:
+        if interactive:
             print(
                 "Would you like to pivot the data by diagnoses, subcategories,",
                 "categories, or all?",
@@ -770,9 +778,6 @@ class Diag_Preprocess:
             while pivot_by not in ["diagnoses", "subcategories", "categories", "all"]:
                 print("Please enter diagnoses, subcategories, categories, or all.")
                 pivot_by = input().lower()
-
-        # allow user to set certainty filter
-        if interactive:
             self.certainty_filter()
         else:
             if cert_filter is None:
@@ -803,19 +808,9 @@ class Diag_Preprocess:
             self.categories(include_details=False)
         print("Preprocessing complete.")
 
-        if output_path is None:
-            print("Would you like to save the data to a file? (yes or no)")
-            resp = input().lower()
-            while resp != "yes" and resp != "no":
-                print("Please enter yes or no")
-                resp = input().lower()
-            if resp == "yes":
-                print("Please enter the path to save the file to.")
-                output_path = input()
-        # save data if specified
-        if output_path is not None:
-            self.new_df.to_csv(output_path, index=False)
-            print("Data saved to " + output_path)
+        # save data
+        self.new_df.to_csv(output_path, index=False)
+        print("Data saved to " + output_path)
 
         # plot data if specified
         if viz:

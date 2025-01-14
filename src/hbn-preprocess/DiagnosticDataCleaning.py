@@ -9,8 +9,8 @@ def data_clean(hbn_data_path: str) -> None:
     This function fixes known inconsistencies or errors in the HBN Clinician Consensus
     Diagnosis Data. First, repeated diagnoses are removed. The rest of the fixes are
     related to diagnosis certainty. As the data entry template for this dataset has
-    changed over time, participants may missing values for columns that were not present
-    at the time of data entry. The changes to the certainty columns are as follows:
+    changed over time, participants may be missing values for columns that were not
+    present at the time of data entry. The changes to the certainty columns include:
         - When one of confirmed, presumptive, or requires confirmation are 1, if by
         history is missing, it should be set to 0.
         - When confirmed and presumptive are missing, if requires confirmation, rule
@@ -35,6 +35,9 @@ def data_clean(hbn_data_path: str) -> None:
     """
     # load data
     df = pd.read_csv(hbn_data_path, low_memory=False)
+
+    #
+    df["Identifiers"] = df["Identifiers"].str.split(",").str[0]
 
     # remove known duplicate diagnoses/ whitespace
     df = df.replace(
@@ -183,5 +186,5 @@ def data_clean(hbn_data_path: str) -> None:
     print(f"Corrected data was saved to {save_path}")
 
 
-# run
-data_clean("data/HBN_Data_SympCheck2.0.csv")
+# run - replace with raw data path
+data_clean("data/HBN_data.csv")
