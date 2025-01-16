@@ -1,4 +1,4 @@
-"""Pivots the ClinicianConsensusDiagnosis Data."""
+"""Pivots the clinician consensus diagnosis data."""
 
 # import modules
 import itertools
@@ -739,14 +739,14 @@ class Diag_Preprocess:
             plt.subplots_adjust(bottom=0.25)  # Adjust bottom padding as needed
             plt.show()
 
-    def run(
+    def pivot(
         self: "Diag_Preprocess",
         output_path: str,
         interactive: bool = True,
         pivot_by: str = "all",
         cert_filter: typing.Optional[list] = None,
         time_filter: typing.Optional[list] = None,
-        viz: bool = False,
+        viz: bool = True,
     ) -> pd.DataFrame:
         """Runs the preprocessing of clinician consensus diagnostic data.
 
@@ -764,7 +764,7 @@ class Diag_Preprocess:
             diagnostic times to include in the data. Options are "Current" and "Past".
             Default is None, which will not apply a filter.
             viz (bool): Whether to visualize the data by plotting counts of each
-            diagnosis or category. Default is False.
+            diagnosis or category. Default is True.
 
         Returns:
             DataFrame: The preprocessed data.
