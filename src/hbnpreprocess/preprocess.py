@@ -22,9 +22,6 @@ class Diag_Preprocess:
             hbn_data_path (str): Path to the HBN data file.
 
         """
-        # if hbn_data_path is None:
-        #     print("Please enter the path to the HBN data file.")
-        #     hbn_data_path = input()
         self.input_path = hbn_data_path
         df = pd.read_csv(hbn_data_path, low_memory=False)
 
@@ -66,12 +63,19 @@ class Diag_Preprocess:
 
         # create new DataFrame for results
         self.new_df = pd.DataFrame()
-        # copy IDs and NoDx variable
-        self.new_df["Identifiers"] = df["Identifiers"].copy()
-        self.new_df["NoDX"] = df["Diagnosis_ClinicianConsensus,NoDX"].copy()
+        # IDs and other columns that don't need to be pivoted
+        unchanged_cols = [
+            "Identifiers",
+            "Diagnosis_ClinicianConsensus,NoDX",
+            "Diagnosis_ClinicianConsensus,Season",
+            "Diagnosis_ClinicianConsensus,Site",
+            "Diagnosis_ClinicianConsensus,Year",
+        ]
+        for x in unchanged_cols:
+            self.new_df[x] = df[x].copy()
 
     def certainty_filter(self: "Diag_Preprocess") -> None:
-        """Filter diagnoses by user-selected certainty level and time of diagnosis."""
+        """Interactively filters diagnoses by user-selected certainty and time."""
         cert_texts = [
             "confirmed diagnoses",
             "presumptive diagnoses",
@@ -157,9 +161,80 @@ class Diag_Preprocess:
                 + ". Other diagnoses will be excluded."
             )
 
+    def certainty(self: "Diag_Preprocess", i: int, col: str) -> str:
+        """Set the certainty of the diagnosis or category."""
+        if all(
+            [
+                self.df.at[i, str(col) + "_Confirmed"] != 1,
+                self.df.at[i, str(col) + "_Presum"] != 1,
+                self.df.at[i, str(col) + "_RC"] != 1,
+                self.df.at[i, str(col) + "_RuleOut"] != 1,
+                self.df.at[i, str(col) + "_ByHx"] == 1,
+            ]
+        ):
+            cert = "ByHx"
+        elif all(
+            [
+                self.df.at[i, str(col) + "_Confirmed"] == 1,
+                self.df.at[i, str(col) + "_Presum"] != 1,
+                self.df.at[i, str(col) + "_RC"] != 1,
+                self.df.at[i, str(col) + "_RuleOut"] != 1,
+                self.df.at[i, str(col) + "_ByHx"] != 1,
+            ]
+        ):
+            cert = "Confirmed"
+        elif all(
+            [
+                self.df.at[i, str(col) + "_Confirmed"] != 1,
+                self.df.at[i, str(col) + "_Presum"] == 1,
+                self.df.at[i, str(col) + "_RC"] != 1,
+                self.df.at[i, str(col) + "_RuleOut"] != 1,
+                self.df.at[i, str(col) + "_ByHx"] != 1,
+            ]
+        ):
+            cert = "Presumptive"
+        elif all(
+            [
+                self.df.at[i, str(col) + "_Confirmed"] != 1,
+                self.df.at[i, str(col) + "_Presum"] != 1,
+                self.df.at[i, str(col) + "_RC"] == 1,
+                self.df.at[i, str(col) + "_RuleOut"] != 1,
+                self.df.at[i, str(col) + "_ByHx"] != 1,
+            ]
+        ):
+            cert = "RC"
+        elif all(
+            [
+                self.df.at[i, str(col) + "_Confirmed"] != 1,
+                self.df.at[i, str(col) + "_Presum"] != 1,
+                self.df.at[i, str(col) + "_RC"] != 1,
+                self.df.at[i, str(col) + "_RuleOut"] == 1,
+                self.df.at[i, str(col) + "_ByHx"] != 1,
+            ]
+        ):
+            cert = "RuleOut"
+        # if certainties are 0 and time = 2, assign 'N/A' these are past diagnoses
+        # noted in Past_Doc
+        elif all(
+            [
+                self.df.at[i, str(col) + "_Time"] == 2,
+                self.df.at[i, str(col) + "_Confirmed"] == 0,
+                self.df.at[i, str(col) + "_Presum"] == 0,
+                self.df.at[i, str(col) + "_RC"] == 0,
+                self.df.at[i, str(col) + "_RuleOut"] == 0,
+                self.df.at[i, str(col) + "_ByHx"] != 1,
+            ]
+        ):
+            cert = "N/A"
+        # if all missing, or conflicting certainties are present,assign 'Unknown'
+        else:
+            cert = "Unknown"
+        return cert
+
     def diagnoses(self: "Diag_Preprocess") -> None:
         """Pivot the dataset on diagnoses."""
         repeated_vars = ["_Cat", "_Sub", "_Spec", "_Code", "_Past_Doc"]
+        print("Diagnoses in dataset:")
         for d in self.dxes:
             print(d)
             d_cleaned = (
@@ -190,61 +265,7 @@ class Diag_Preprocess:
                 # locate presence of specific diagnosis
                 if self.df.at[i, str(col)] == d:
                     # set certainty
-                    if self.df.at[i, str(col) + "_ByHx"] == 1:
-                        cert = "ByHx"
-                    elif all(
-                        [
-                            self.df.at[i, str(col) + "_Confirmed"] == 1,
-                            self.df.at[i, str(col) + "_Presum"] != 1,
-                            self.df.at[i, str(col) + "_RC"] != 1,
-                            self.df.at[i, str(col) + "_RuleOut"] != 1,
-                        ]
-                    ):
-                        cert = "Confirmed"
-                    elif all(
-                        [
-                            self.df.at[i, str(col) + "_Confirmed"] != 1,
-                            self.df.at[i, str(col) + "_Presum"] == 1,
-                            self.df.at[i, str(col) + "_RC"] != 1,
-                            self.df.at[i, str(col) + "_RuleOut"] != 1,
-                        ]
-                    ):
-                        cert = "Presumptive"
-                    elif all(
-                        [
-                            self.df.at[i, str(col) + "_Confirmed"] != 1,
-                            self.df.at[i, str(col) + "_Presum"] != 1,
-                            self.df.at[i, str(col) + "_RC"] == 1,
-                            self.df.at[i, str(col) + "_RuleOut"] != 1,
-                        ]
-                    ):
-                        cert = "RC"
-                    elif all(
-                        [
-                            self.df.at[i, str(col) + "_Confirmed"] != 1,
-                            self.df.at[i, str(col) + "_Presum"] != 1,
-                            self.df.at[i, str(col) + "_RC"] != 1,
-                            self.df.at[i, str(col) + "_RuleOut"] == 1,
-                        ]
-                    ):
-                        cert = "RuleOut"
-                    # if certainties are 0 and time = 2, assign 'N/A'
-                    # these are past diagnoses noted in Past_Doc
-                    elif all(
-                        [
-                            self.df.at[i, str(col) + "_Time"] == 2,
-                            self.df.at[i, str(col) + "_Confirmed"] == 0,
-                            self.df.at[i, str(col) + "_Presum"] == 0,
-                            self.df.at[i, str(col) + "_RC"] == 0,
-                            self.df.at[i, str(col) + "_RuleOut"] == 0,
-                            self.df.at[i, str(col) + "_ByHx"] != 1,
-                        ]
-                    ):
-                        cert = "N/A"
-                    # if all missing, or conflicting certainties are present,
-                    # assign 'Unknown'
-                    else:
-                        cert = "Unknown"
+                    cert = self.certainty(i, col)
                     # set time
                     if self.df.at[i, str(col) + "_Time"] == 1:
                         time = "Current"
@@ -323,6 +344,7 @@ class Diag_Preprocess:
 
     def subcategories(self: "Diag_Preprocess", include_details: bool = True) -> None:
         """Pivot the dataset on diagnostic subcategories."""
+        print("Diagnostic subcategories in dataset:")
         for s in self.subs:
             print(s)
             s_cleaned = (
@@ -353,62 +375,7 @@ class Diag_Preprocess:
                     col = "Diagnosis_ClinicianConsensus,DX_" + str(n)
                     if self.df.at[i, str(col) + "_Sub"] == s:
                         # set certainty
-                        if self.df.at[i, str(col) + "_ByHx"] == 1:
-                            cert = "ByHx"
-                        elif all(
-                            [
-                                self.df.at[i, str(col) + "_Confirmed"] == 1,
-                                self.df.at[i, str(col) + "_Presum"] != 1,
-                                self.df.at[i, str(col) + "_RC"] != 1,
-                                self.df.at[i, str(col) + "_RuleOut"] != 1,
-                            ]
-                        ):
-                            cert = "Confirmed"
-                        elif all(
-                            [
-                                self.df.at[i, str(col) + "_Confirmed"] != 1,
-                                self.df.at[i, str(col) + "_Presum"] == 1,
-                                self.df.at[i, str(col) + "_RC"] != 1,
-                                self.df.at[i, str(col) + "_RuleOut"] != 1,
-                            ]
-                        ):
-                            cert = "Presumptive"
-                        elif all(
-                            [
-                                self.df.at[i, str(col) + "_Confirmed"] != 1,
-                                self.df.at[i, str(col) + "_Presum"] != 1,
-                                self.df.at[i, str(col) + "_RC"] == 1,
-                                self.df.at[i, str(col) + "_RuleOut"] != 1,
-                            ]
-                        ):
-                            cert = "RC"
-                        elif all(
-                            [
-                                self.df.at[i, str(col) + "_Confirmed"] != 1,
-                                self.df.at[i, str(col) + "_Presum"] != 1,
-                                self.df.at[i, str(col) + "_RC"] != 1,
-                                self.df.at[i, str(col) + "_RuleOut"] == 1,
-                            ]
-                        ):
-                            cert = "RuleOut"
-                        # if certainties are 0 and time = 2, assign 'N/A'
-                        # these are past diagnoses noted in Past_Doc
-                        elif all(
-                            [
-                                self.df.at[i, str(col) + "_Time"] == 2,
-                                self.df.at[i, str(col) + "_Confirmed"] == 0,
-                                self.df.at[i, str(col) + "_Presum"] == 0,
-                                self.df.at[i, str(col) + "_RC"] == 0,
-                                self.df.at[i, str(col) + "_RuleOut"] == 0,
-                                self.df.at[i, str(col) + "_ByHx"] != 1,
-                            ]
-                        ):
-                            cert = "N/A"
-
-                        # if all missing, or conflicting certainties are present,
-                        # assign 'Unknown'
-                        else:
-                            cert = "Unknown"
+                        cert = self.certainty(i, col)
                         # set time
                         if self.df.at[i, str(col) + "_Time"] == 1:
                             time = "Current"
@@ -518,6 +485,7 @@ class Diag_Preprocess:
 
     def categories(self: "Diag_Preprocess", include_details: bool = True) -> None:
         """Pivot the data on diagnostic categories."""
+        print("Diagnostic subcategories in dataset:")
         for c in self.cats:
             print(c)
             c_cleaned = (
@@ -543,61 +511,7 @@ class Diag_Preprocess:
                     col = "Diagnosis_ClinicianConsensus,DX_" + str(n)
                     if self.df.at[i, str(col) + "_Cat"] == c:
                         # set certainty
-                        if self.df.at[i, str(col) + "_ByHx"] == 1:
-                            cert = "ByHx"
-                        elif all(
-                            [
-                                self.df.at[i, str(col) + "_Confirmed"] == 1,
-                                self.df.at[i, str(col) + "_Presum"] != 1,
-                                self.df.at[i, str(col) + "_RC"] != 1,
-                                self.df.at[i, str(col) + "_RuleOut"] != 1,
-                            ]
-                        ):
-                            cert = "Confirmed"
-
-                        elif all(
-                            [
-                                self.df.at[i, str(col) + "_Confirmed"] != 1,
-                                self.df.at[i, str(col) + "_Presum"] == 1,
-                                self.df.at[i, str(col) + "_RC"] != 1,
-                                self.df.at[i, str(col) + "_RuleOut"] != 1,
-                            ]
-                        ):
-                            cert = "Presumptive"
-                        elif all(
-                            [
-                                self.df.at[i, str(col) + "_Confirmed"] != 1,
-                                self.df.at[i, str(col) + "_Presum"] != 1,
-                                self.df.at[i, str(col) + "_RC"] == 1,
-                                self.df.at[i, str(col) + "_RuleOut"] != 1,
-                            ]
-                        ):
-                            cert = "RC"
-                        elif all(
-                            [
-                                self.df.at[i, str(col) + "_Confirmed"] != 1,
-                                self.df.at[i, str(col) + "_Presum"] != 1,
-                                self.df.at[i, str(col) + "_RC"] != 1,
-                                self.df.at[i, str(col) + "_RuleOut"] == 1,
-                            ]
-                        ):
-                            cert = "RuleOut"
-                        # if certainties are 0 and time = 2, assign 'N/A'
-                        # these are past diagnoses noted in Past_Doc
-                        elif all(
-                            [
-                                self.df.at[i, str(col) + "_Time"] == 2,
-                                self.df.at[i, str(col) + "_Confirmed"] == 0,
-                                self.df.at[i, str(col) + "_Presum"] == 0,
-                                self.df.at[i, str(col) + "_RC"] == 0,
-                                self.df.at[i, str(col) + "_RuleOut"] == 0,
-                                self.df.at[i, str(col) + "_ByHx"] != 1,
-                            ]
-                        ):
-                            cert = "N/A"
-                        # if missing or conflicting certainties, assign 'Unknown'
-                        else:
-                            cert = "Unknown"
+                        cert = self.certainty(i, col)
                         # set time
                         if self.df.at[i, str(col) + "_Time"] == 1:
                             time = "Current"
@@ -746,6 +660,7 @@ class Diag_Preprocess:
         pivot_by: str = "all",
         cert_filter: typing.Optional[list] = None,
         time_filter: typing.Optional[list] = None,
+        include_details: bool = True,
         viz: bool = True,
     ) -> pd.DataFrame:
         """Runs the preprocessing of clinician consensus diagnostic data.
@@ -763,6 +678,9 @@ class Diag_Preprocess:
             time_filter (list): If interactive filtering is not used, a list of
             diagnostic times to include in the data. Options are "Current" and "Past".
             Default is None, which will not apply a filter.
+            include_details (bool): Whether to include details of each specific
+            diagnosis when pivoting on higher level subcategories or categories. Default
+            is True.
             viz (bool): Whether to visualize the data by plotting counts of each
             diagnosis or category. Default is True.
 
@@ -778,6 +696,7 @@ class Diag_Preprocess:
             while pivot_by not in ["diagnoses", "subcategories", "categories", "all"]:
                 print("Please enter diagnoses, subcategories, categories, or all.")
                 pivot_by = input().lower()
+            print("Pivoting the data by " + pivot_by + ".")
             self.certainty_filter()
         else:
             if cert_filter is None:
@@ -797,9 +716,9 @@ class Diag_Preprocess:
         if pivot_by == "diagnoses":
             self.diagnoses()
         if pivot_by == "subcategories":
-            self.subcategories()
+            self.subcategories(include_details=include_details)
         if pivot_by == "categories":
-            self.categories()
+            self.categories(include_details=include_details)
         if pivot_by == "all":
             self.diagnoses()
             print("Diagnoses complete. Moving to subcategories...")
@@ -813,6 +732,14 @@ class Diag_Preprocess:
         print("Data saved to " + output_path)
 
         # plot data if specified
+        if interactive:
+            print("Would you like to visualize the data? (yes or no)")
+            viz_input = input().lower()
+            while viz_input != "yes" and viz_input != "no":
+                print("Please enter yes or no")
+                viz_input = input().lower()
+            if viz_input == "no":
+                viz = False
         if viz:
             self.visualize(by=pivot_by)
 
