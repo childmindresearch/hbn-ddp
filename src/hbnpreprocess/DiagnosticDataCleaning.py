@@ -4,7 +4,7 @@ import pandas as pd
 
 
 def data_clean(hbn_data_path: str) -> None:
-    """Fixes error and missing values in the diagnostic data and saves as csv.
+    """Fixes errors and missing values in the diagnostic data and saves as csv.
 
     This function fixes known inconsistencies or errors in the HBN Clinician Consensus
     Diagnosis Data. First, repeated diagnoses are removed. The rest of the fixes are
