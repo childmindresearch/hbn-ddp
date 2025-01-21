@@ -73,6 +73,8 @@ class Diag_Preprocess:
         ]
         for x in unchanged_cols:
             self.new_df[x] = df[x].copy()
+        # remove extra text in ID column
+        self.new_df["Identifiers"] = self.new_df["Identifiers"].str.split(",").str[0]
 
     def certainty_filter(self: "Diag_Preprocess") -> None:
         """Interactively filters diagnoses by user-selected certainty and time."""
@@ -485,7 +487,7 @@ class Diag_Preprocess:
 
     def categories(self: "Diag_Preprocess", include_details: bool = True) -> None:
         """Pivot the data on diagnostic categories."""
-        print("Diagnostic subcategories in dataset:")
+        print("Diagnostic categories in dataset:")
         for c in self.cats:
             print(c)
             c_cleaned = (
@@ -604,8 +606,7 @@ class Diag_Preprocess:
                 ha="right",
                 fontsize=8,
             )
-            plt.subplots_adjust(bottom=0.25)  # Adjust bottom padding as needed
-            plt.show()
+            plt.subplots_adjust(bottom=0.25)
         # category plot
         if by == "all" or by == "categories":
             # filter columns
@@ -626,7 +627,7 @@ class Diag_Preprocess:
                 ha="right",
                 fontsize=8,
             )
-            plt.subplots_adjust(bottom=0.25)  # Adjust bottom padding as needed
+            plt.subplots_adjust(bottom=0.25)
             plt.show()
         # subcategory plot
         if by == "all" or by == "subcategories":
