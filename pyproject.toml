@@ -5,10 +5,11 @@ description = "A repo for cleaning and pivoting the hbh clinician consensus data
 authors = ["maya-roberts <maya36247@gmail.com>"]
 license = ""
 readme = "README.md"
-packages = [{include = "hbn-preprocess", from = "src"}]
+packages = [{ include = "hbn-preprocess", from = "src" }]
 
 [tool.poetry.dependencies]
-python = "~3.11"
+# Consider changing to >=3.11 python version
+python = ">3.11"
 matplotlib = "^3.10.0"
 pandas = "^2.2.3"
 
@@ -24,12 +25,8 @@ ipykernel = "^6.29.5"
 pdoc = "^15.0.0"
 
 [tool.pytest.ini_options]
-pythonpath = [
-  "src"
-]
-testpaths = [
-  "tests"
-]
+pythonpath = ["src"]
+testpaths = ["tests"]
 
 [tool.mypy]
 ignore_missing_imports = true

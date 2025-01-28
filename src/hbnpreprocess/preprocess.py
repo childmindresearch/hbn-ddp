@@ -1,21 +1,21 @@
 """Pivots the clinician consensus diagnosis data."""
 
-# import modules
+from __future__ import annotations
+
 import itertools
 import typing
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 
-class Diag_Preprocess:
+class DiagPreprocess:
     """Class for HBN data preprocessing."""
 
-    def __init__(
-        self: "Diag_Preprocess",
-        hbn_data_path: str,
-    ) -> None:
+    # Generally don't need to type-hint self.
+    def __init__(self, hbn_data_path: Path) -> None:
         """Initializes a class for HBN data preprocessing.
 
         Args:
@@ -23,10 +23,21 @@ class Diag_Preprocess:
 
         """
         self.input_path = hbn_data_path
+        # Generally it's better to keep functions that may raise an exception outside of __init__.
+        # If an exception is raised in __init__, you might end up with a partially
+        # initialized object.
+        # I usually only do simple assignments in __init__ and keep the rest of the logic
+        # in a @classmethod called create, in this case it would be something like:
+        # @classmethod
+        # def create(cls, hbn_data_path: Path) -> DiagPreprocess:
+        #     if not hbn_data_path.exists():
+        #         raise FileNotFoundError(f"File {hbn_data_path} not found.")
+        #     df = pd.read_csv(hbn_data_path, low_memory=False)
+        #     return cls(df)
         df = pd.read_csv(hbn_data_path, low_memory=False)
 
-        dx_ns = ["0" + str(n) for n in range(1, 10)]
-        dx_ns.append("10")
+        # Use format string for 0-padding.
+        dx_ns = [f"{n:02d}" for n in range(1, 11)]
 
         # define columns
         cat_cols = ["Diagnosis_ClinicianConsensus,DX_" + n + "_Cat" for n in dx_ns]
@@ -48,6 +59,9 @@ class Diag_Preprocess:
             " ",
         ]
         # extract unique categories, subcategories, and diagnoses
+        # I think flatten would be more readable than ravel("K")
+        # can use sets instead of list if you want to guarantee unique values
+        # self.cats = set(df[cat_cols].values.flatten()) - remove
         self.cats = [
             x for x in pd.unique(df[cat_cols].values.ravel("K")) if str(x) not in remove
         ]
@@ -62,6 +76,7 @@ class Diag_Preprocess:
         self.dxes.sort()
 
         # create new DataFrame for results
+        # Don't store results in self, just return from functions.
         self.new_df = pd.DataFrame()
         # IDs and other columns that don't need to be pivoted
         unchanged_cols = [
@@ -76,8 +91,10 @@ class Diag_Preprocess:
         # remove extra text in ID column
         self.new_df["Identifiers"] = self.new_df["Identifiers"].str.split(",").str[0]
 
-    def certainty_filter(self: "Diag_Preprocess") -> None:
+    def certainty_filter(self) -> None:
         """Interactively filters diagnoses by user-selected certainty and time."""
+
+        # Can define all these lists as constants somewhere more visible, e.g. at top of class.
         cert_texts = [
             "confirmed diagnoses",
             "presumptive diagnoses",
@@ -91,6 +108,10 @@ class Diag_Preprocess:
         times = ["Current", "Past"]
         self.cert_filter = []
         self.time_filter = []
+        # Generally would keep interactive portions separate from the main logic.
+        # e.g. have a separate function that takes all the necessary parameters, and
+        # then an interactive function that wraps it and asks for user input.
+        # Also, for input, might be helpful to use something like questionary for prompting.
         print(
             "The HBN dataset includes diagnoses of varying levels of certainty: "
             "confirmed, presumptive, requires confirmation, rule out, and by history)"
@@ -163,7 +184,7 @@ class Diag_Preprocess:
                 + ". Other diagnoses will be excluded."
             )
 
-    def certainty(self: "Diag_Preprocess", i: int, col: str) -> str:
+    def certainty(self, i: int, col: str) -> str:
         """Set the certainty of the diagnosis or category."""
         if all(
             [
@@ -233,7 +254,7 @@ class Diag_Preprocess:
             cert = "Unknown"
         return cert
 
-    def diagnoses(self: "Diag_Preprocess") -> None:
+    def diagnoses(self) -> None:
         """Pivot the dataset on diagnoses."""
         repeated_vars = ["_Cat", "_Sub", "_Spec", "_Code", "_Past_Doc"]
         print("Diagnoses in dataset:")
@@ -252,6 +273,7 @@ class Diag_Preprocess:
                 .replace("__", "")
             )
             # create new columns
+            # Why all the copies?
             self.new_df = self.new_df.copy()
             self.new_df[str(d_cleaned) + "_DiagnosisPresent"] = 0
             self.new_df = self.new_df.copy()
@@ -344,7 +366,7 @@ class Diag_Preprocess:
                         self.new_df = self.new_df.copy()
                         self.new_df.at[i, str(d_cleaned) + "_Time"] = time
 
-    def subcategories(self: "Diag_Preprocess", include_details: bool = True) -> None:
+    def subcategories(self: DiagPreprocess, include_details: bool = True) -> None:
         """Pivot the dataset on diagnostic subcategories."""
         print("Diagnostic subcategories in dataset:")
         for s in self.subs:
@@ -485,7 +507,7 @@ class Diag_Preprocess:
                         sub_details
                     ).strip("[]")
 
-    def categories(self: "Diag_Preprocess", include_details: bool = True) -> None:
+    def categories(self: DiagPreprocess, include_details: bool = True) -> None:
         """Pivot the data on diagnostic categories."""
         print("Diagnostic categories in dataset:")
         for c in self.cats:
@@ -577,7 +599,7 @@ class Diag_Preprocess:
                         cat_details
                     ).strip("[]")
 
-    def visualize(self: "Diag_Preprocess", by: str) -> None:
+    def visualize(self, by: str) -> None:
         """Visualizes the data by diagnoses, subcategories, or categories.
 
         Args:
@@ -655,7 +677,7 @@ class Diag_Preprocess:
             plt.show()
 
     def pivot(
-        self: "Diag_Preprocess",
+        self: DiagPreprocess,
         output_path: str,
         interactive: bool = True,
         pivot_by: str = "all",
