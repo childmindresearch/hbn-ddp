@@ -23,11 +23,13 @@ class DiagPreprocess:
 
         """
         self.input_path = hbn_data_path
-        # Generally it's better to keep functions that may raise an exception outside of __init__.
+        # TODO Generally it's better to keep functions that may raise an exception
+        # outside of __init__.
         # If an exception is raised in __init__, you might end up with a partially
         # initialized object.
-        # I usually only do simple assignments in __init__ and keep the rest of the logic
-        # in a @classmethod called create, in this case it would be something like:
+        # I usually only do simple assignments in __init__ and keep the rest of the
+        # logic in a @classmethod called create, in this case it would be something
+        # like:
         # @classmethod
         # def create(cls, hbn_data_path: Path) -> DiagPreprocess:
         #     if not hbn_data_path.exists():
@@ -59,7 +61,7 @@ class DiagPreprocess:
             " ",
         ]
         # extract unique categories, subcategories, and diagnoses
-        # I think flatten would be more readable than ravel("K")
+        # TODO: I think flatten would be more readable than ravel("K")
         # can use sets instead of list if you want to guarantee unique values
         # self.cats = set(df[cat_cols].values.flatten()) - remove
         self.cats = [
@@ -76,7 +78,7 @@ class DiagPreprocess:
         self.dxes.sort()
 
         # create new DataFrame for results
-        # Don't store results in self, just return from functions.
+        # TODO: Don't store results in self, just return from functions.
         self.new_df = pd.DataFrame()
         # IDs and other columns that don't need to be pivoted
         unchanged_cols = [
@@ -93,8 +95,8 @@ class DiagPreprocess:
 
     def certainty_filter(self) -> None:
         """Interactively filters diagnoses by user-selected certainty and time."""
-
-        # Can define all these lists as constants somewhere more visible, e.g. at top of class.
+        # TODO: Can define all these lists as constants somewhere more visible, e.g. at
+        # top of class.
         cert_texts = [
             "confirmed diagnoses",
             "presumptive diagnoses",
@@ -184,8 +186,14 @@ class DiagPreprocess:
                 + ". Other diagnoses will be excluded."
             )
 
+    # TODO: Consider using an enum for the certainty levels.
     def certainty(self, i: int, col: str) -> str:
         """Set the certainty of the diagnosis or category."""
+        # TODO: Rather than indexing into df every time, I think this would be clearer if
+        # each of the conditions were assigned to variables that can be used in the
+        # logic.
+        # TODO: Another potential simplification would be to check sum(bool_values) == 1 to
+        # ensure only one of the conditions is met.
         if all(
             [
                 self.df.at[i, str(col) + "_Confirmed"] != 1,
@@ -262,6 +270,7 @@ class DiagPreprocess:
             print(d)
             d_cleaned = (
                 d.strip()
+                # TODO: Can simplify this using regex replace, or filter(str.alnum, d)
                 .replace(" ", "_")
                 .replace(":", "")
                 .replace("-", "")
@@ -273,7 +282,7 @@ class DiagPreprocess:
                 .replace("__", "")
             )
             # create new columns
-            # Why all the copies?
+            # TODO: Why all the copies?
             self.new_df = self.new_df.copy()
             self.new_df[str(d_cleaned) + "_DiagnosisPresent"] = 0
             self.new_df = self.new_df.copy()
@@ -284,6 +293,8 @@ class DiagPreprocess:
                 self.new_df = self.new_df.copy()
                 self.new_df[str(d_cleaned) + str(var)] = ""
             # iterate through each participant and diagnosis
+            # TODO: This is a lot of nested logic, would recommend breaking up into smaller
+            # functions
             for i, n in itertools.product(range(0, len(self.df)), self.dx_ns):
                 col = "Diagnosis_ClinicianConsensus,DX_" + str(n)
                 # locate presence of specific diagnosis
@@ -599,6 +610,8 @@ class DiagPreprocess:
                         cat_details
                     ).strip("[]")
 
+    # TODO: For string params that are restricted to specific values, you can type hint
+    # using typing.Literal, e.g. Literal["all", "diagnoses", "subcategories", ...]
     def visualize(self, by: str) -> None:
         """Visualizes the data by diagnoses, subcategories, or categories.
 
