@@ -1,4 +1,12 @@
+# Local directories used in development.
+data/
+local/
+dist/
 
+# MacOS
+.DS_Store
+
+# Python
 __pycache__/
 
 .Python
@@ -16,14 +24,10 @@ ENV/
 env.bak/
 venv.bak/
 
+# MyPy
 .mypy_cache/
 .dmypy.json
 dmypy.json
 
+# Ruff
 .ruff_cache/
-
-data/
-
-local/
-
-dist/
