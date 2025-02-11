@@ -1,9 +1,13 @@
 """Module for handling the HBN data."""
 
 from dataclasses import dataclass
-from pathlib import Path
+from typing import List, Literal, Optional
 
 import pandas as pd
+
+from .processor import Processor
+from .utils import write
+from .viz import Viz
 
 
 @dataclass
@@ -13,7 +17,7 @@ class DataConfig:
     clean_data: bool = False
 
 
-class HbnDiagnosticData:
+class HBNData:
     """Class for handling the HBN diagnostic data."""
 
     NULL_DIAGNOSES = [
@@ -25,24 +29,21 @@ class HbnDiagnosticData:
     ]
 
     @classmethod
-    def load(
-        path: Path,
-        config: DataConfig,
+    def process(
+        cls,
+        input_path: str,
+        output_path: str,
+        by: Literal["diagnoses", "subcategories", "categories", "all"],
+        certainty_filter: Optional[List[str]] = None,
+        time_filter: Optional[List[str]] = None,
+        include_details: bool = False,
     ) -> pd.DataFrame:
-        """Load the data."""
-        pass
-
-    @classmethod
-    def visualize(cls) -> None:
-        """Visualize the data."""
-        pass
-
-    @classmethod
-    def pivot(cls) -> pd.DataFrame:
-        """Pivot the data."""
-        pass
-
-    @classmethod
-    def explore(cls) -> None:
-        """Explore data interactively."""
-        pass
+        """Process the data."""
+        data = Processor.load(input_path)
+        output = Processor.copy(data)
+        output = Processor.pivot(
+            data, output, by, certainty_filter, time_filter, include_details
+        )
+        Viz.visualize(output, by)
+        write(output, output_path)
+        return output
