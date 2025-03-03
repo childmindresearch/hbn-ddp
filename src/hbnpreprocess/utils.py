@@ -16,8 +16,9 @@ def show(fig: go.Figure) -> None:
     img.show()
 
 
-def write(output: pd.DataFrame, output_dir: str) -> None:
+def write(output: pd.DataFrame, input_path: str, output_path: str | None) -> None:
     """Write the processed data to a CSV file."""
-    output.to_csv(output_dir, index=False)
-    print(f"Data saved in {output_dir}")
-    return None
+    if output_path is None:
+        output_path = input_path.replace(".csv", "_processed.csv")
+    output.to_csv(output_path, index=False)
+    print(f"Data saved to {output_path}")

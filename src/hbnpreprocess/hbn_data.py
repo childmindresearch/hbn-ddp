@@ -7,7 +7,7 @@ import pandas as pd
 
 from .processor import Processor
 from .utils import write
-from .viz import Viz
+from .viz import visualize
 
 
 @dataclass
@@ -20,20 +20,11 @@ class DataConfig:
 class HBNData:
     """Class for handling the HBN diagnostic data."""
 
-    NULL_DIAGNOSES = [
-        "nan",
-        "No Diagnosis Given",
-        "No Diagnosis Given: Incomplete Eval",
-        "",
-        " ",
-    ]
-
-    @classmethod
+    @staticmethod
     def process(
-        cls,
         input_path: str,
-        output_path: str,
-        by: Literal["diagnoses", "subcategories", "categories", "all"],
+        output_path: str | None = None,
+        by: Literal["diagnoses", "subcategories", "categories", "all"] = "all",
         certainty_filter: Optional[List[str]] = None,
         time_filter: Optional[List[str]] = None,
         include_details: bool = False,
@@ -44,6 +35,6 @@ class HBNData:
         output = Processor.pivot(
             data, output, by, certainty_filter, time_filter, include_details
         )
-        Viz.visualize(output, by)
-        write(output, output_path)
+        visualize(output, by)
+        write(output, output_path=output_path, input_path=input_path)
         return output

@@ -12,11 +12,8 @@ class Pivot:
 
     dx_ns = [f"{n:02d}" for n in range(1, 11)]
 
-    def __init__(self) -> None:
-        """Initialize the class."""
-
     @classmethod
-    def get_cols(
+    def _get_cols(
         cls,
         data: pd.DataFrame,
         by: Literal["diagnoses", "subcategories", "categories"],
@@ -49,7 +46,7 @@ class Pivot:
         return cols
 
     @staticmethod
-    def certainty(data: pd.DataFrame, i: int, col: str) -> str:
+    def _certainty(data: pd.DataFrame, i: int, col: str) -> str:
         """Get the certainty of the diagnosis."""
         # TODO: Consider using an enum for the certainty levels.
         # TODO: Rather than indexing into df every time, I think this would be clearer
@@ -135,7 +132,7 @@ class Pivot:
     ) -> pd.DataFrame:
         """Pivot the data by diagnoses."""
         repeated_vars = ["_Cat", "_Sub", "_Spec", "_Code", "_Past_Doc"]
-        cols = cls.get_cols(data, "diagnoses")
+        cols = cls._get_cols(data, "diagnoses")
         print("Diagnoses in dataset:")
         for d in cols:
             print(d)
@@ -158,7 +155,7 @@ class Pivot:
                 # locate presence of specific diagnosis
                 if data.at[i, str(col)] == d:
                     # set certainty
-                    cert = cls.certainty(data, i, col)
+                    cert = cls._certainty(data, i, col)
                     # set time
                     if data.at[i, str(col) + "_Time"] == 1:
                         time = "Current"
@@ -246,7 +243,7 @@ class Pivot:
         include_details: bool = False,
     ) -> pd.DataFrame:
         """Pivot the dataset on diagnostic subcategories."""
-        cols = cls.get_cols(data, "subcategories")
+        cols = cls._get_cols(data, "subcategories")
         print("Diagnostic subcategories in dataset:")
         for s in cols:
             print(s)
@@ -266,7 +263,7 @@ class Pivot:
                     col = "Diagnosis_ClinicianConsensus,DX_" + str(n)
                     if data.at[i, str(col) + "_Sub"] == s:
                         # set certainty
-                        cert = cls.certainty(data, i, col)
+                        cert = cls._certainty(data, i, col)
                         # set time
                         if data.at[i, str(col) + "_Time"] == 1:
                             time = "Current"
@@ -369,7 +366,7 @@ class Pivot:
         include_details: bool = False,
     ) -> pd.DataFrame:
         """Pivot the dataset on diagnostic categories."""
-        cols = cls.get_cols(data, "categories")
+        cols = cls._get_cols(data, "categories")
         for c in cols:
             print(c)
             c_cleaned = "".join(filter(str.isalnum, c.strip()))
@@ -384,7 +381,7 @@ class Pivot:
                     col = "Diagnosis_ClinicianConsensus,DX_" + str(n)
                     if data.at[i, str(col) + "_Cat"] == c:
                         # set certainty
-                        cert = cls.certainty(data, i, col)
+                        cert = cls._certainty(data, i, col)
                         # set time
                         if data.at[i, str(col) + "_Time"] == 1:
                             time = "Current"

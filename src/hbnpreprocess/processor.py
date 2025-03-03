@@ -1,7 +1,7 @@
 """Processing the HBN data."""
 
 from pathlib import Path
-from typing import List, Literal, Optional
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -45,8 +45,7 @@ class Processor:
         ]
 
         output = pd.DataFrame()
-        for x in unchanged_cols:
-            output[x] = data[x].copy()
+        output[unchanged_cols] = data[unchanged_cols].copy()
         # remove extra text in ID column
         output["Identifiers"] = output["Identifiers"].str.split(",").str[0]
         return output
@@ -60,28 +59,31 @@ class Processor:
             "subcategories",
             "categories",
             "all",
-        ],
-        certainty_filter: Optional[List[str]] = None,
-        time_filter: Optional[List[str]] = None,
+        ] = "all",
+        certainty_filter: list[str] | None = None,
+        time_filter: list[str] | None = None,
         include_details: bool = False,
     ) -> pd.DataFrame:
         """Pivot and filter the data."""
-        if by == "diagnoses":
-            output = Pivot.diagnoses(data, output, certainty_filter, time_filter)
-        elif by == "subcategories":
-            output = Pivot.subcategories(
-                data, output, certainty_filter, time_filter, include_details
-            )
-        elif by == "categories":
-            output = Pivot.categories(
-                data, output, certainty_filter, time_filter, include_details
-            )
-        else:
-            output = Pivot.diagnoses(data, output, certainty_filter, time_filter)
-            output = Pivot.subcategories(
-                data, output, certainty_filter, time_filter, include_details
-            )
-            output = Pivot.categories(
-                data, output, certainty_filter, time_filter, include_details
-            )
+        match by:
+            case "diagnoses":
+                output = Pivot.diagnoses(data, output, certainty_filter, time_filter)
+            case "subcategories":
+                output = Pivot.subcategories(
+                    data, output, certainty_filter, time_filter, include_details
+                )
+            case "categories":
+                output = Pivot.categories(
+                    data, output, certainty_filter, time_filter, include_details
+                )
+            case "all":
+                output = Pivot.diagnoses(data, output, certainty_filter, time_filter)
+                output = Pivot.subcategories(
+                    data, output, certainty_filter, time_filter, include_details
+                )
+                output = Pivot.categories(
+                    data, output, certainty_filter, time_filter, include_details
+                )
+            case _:
+                raise ValueError(f"Invalid value for 'by': {by}")
         return output
