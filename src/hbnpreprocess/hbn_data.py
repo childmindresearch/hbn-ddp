@@ -28,6 +28,7 @@ class HBNData:
         certainty_filter: Optional[List[str]] = None,
         time_filter: Optional[List[str]] = None,
         include_details: bool = False,
+        viz: bool = True,
     ) -> pd.DataFrame:
         """Process the data."""
         data = Processor.load(input_path)
@@ -35,6 +36,7 @@ class HBNData:
         output = Processor.pivot(
             data, output, by, certainty_filter, time_filter, include_details
         )
-        visualize(output, by)
+        if viz:
+            visualize(output, by)
         write(output, output_path=output_path, input_path=input_path)
         return output
