@@ -10,8 +10,7 @@
 
 ## Features
 
-- Diagnostic data cleaning: Fixes known errors and missing values in the dataset.
-- Diagnostic data preprocessing: Pivots the data to a wider format, organized by specific diagnoses rather than diagnosis numbers. Includes the option to filter by diagnostic certainty level or time of diagnosis. Option to either run interactively or install as a package and use in a notebook.
+- Diagnostic data preprocessing: Pivots the data to a wider format, organized by specific diagnoses or categories rather than diagnosis numbers. Includes the option to filter by diagnostic certainty level or time of diagnosis. Option to either run interactively or install as a package and use in a notebook.
 
 ## Installation
 
@@ -21,11 +20,9 @@ Install this package via :
 pip install hbn-preprocess
 ```
 
-Or get the newest development version via:
+## Run interactively
 
-```sh
-pip install git+https://github.com/childmindresearch/hbn-preprocess
-```
+python -m hbnpreprocess
 
 ## Quick start
 
