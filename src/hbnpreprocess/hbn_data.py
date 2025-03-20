@@ -26,7 +26,7 @@ class HBNData:
         output_path: str | None = None,
         by: Literal[
             "diagnoses",
-            # "subcategories",
+            "subcategories",
             "categories",
             "all",
         ] = "all",

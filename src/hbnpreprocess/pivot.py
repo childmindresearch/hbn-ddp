@@ -60,7 +60,7 @@ class Pivot:
         return cols
 
     @staticmethod
-    def _certainty(data: pd.DataFrame, i: int, col: str) -> str:
+    def _set_certainty(data: pd.DataFrame, i: int, col: str) -> str:
         """Get the certainty of the diagnosis."""
         # TODO: Consider using an enum for the certainty levels.
         # TODO: Rather than indexing into df every time, I think this would be clearer
@@ -155,7 +155,7 @@ class Pivot:
             cat=data.at[i, str(col) + "_Cat"],
             code=data.at[i, str(col) + "_Code"],
             past_doc=data.at[i, str(col) + "_Past_Doc"],
-            cert=cls._certainty(data, i, col),
+            cert=cls._set_certainty(data, i, col),
             time=data.at[i, str(col) + "_Time"],
         )
 
@@ -178,32 +178,32 @@ class Pivot:
         repeated_vars = ["_Cat", "_Sub", "_Spec", "_Code", "_Past_Doc"]
         cols = cls._get_cols(data, "diagnoses")
         print("Diagnoses in dataset:")
-        for d in cols:
-            print(d)
-            d_cleaned = "".join(filter(str.isalnum, d.strip()))
+        for c in cols:
+            print(c)
+            c_cleaned = "".join(filter(str.isalnum, c.strip()))
             # TODO: Try concatenating all new values at once for performance
-            output[str(d_cleaned) + "_DiagnosisPresent"] = 0
-            output[str(d_cleaned) + "_Certainty"] = None
+            output[str(c_cleaned) + "_DiagnosisPresent"] = 0
+            output[str(c_cleaned) + "_Certainty"] = None
             for var in repeated_vars:
-                output[str(d_cleaned) + str(var)] = None
+                output[str(c_cleaned) + str(var)] = None
             for i, n in itertools.product(range(0, len(data)), cls.dx_ns):
                 details = cls._get_diagnosis_details(data, i, n)
                 col = "Diagnosis_ClinicianConsensus,DX_" + str(n)
                 # locate presence of specific diagnosis
-                if details.diagnosis == d:
+                if details.diagnosis == c:
                     # apply certainty filter if selected and set presence of diagnosis
                     if cls._filter_pass(details.cert, certainty_filter):
                         output = output.copy()
-                        output.at[i, str(d_cleaned) + "_DiagnosisPresent"] = 1
+                        output.at[i, str(c_cleaned) + "_DiagnosisPresent"] = 1
                         # variables repeated by diagnosis
                         for var in repeated_vars:
                             output = output.copy()
-                            output.at[i, str(d_cleaned) + str(var)] = data.at[
+                            output.at[i, str(c_cleaned) + str(var)] = data.at[
                                 i, str(col) + str(var)
                             ]
                         # add certainty
                         output = output.copy()
-                        output.at[i, str(d_cleaned) + "_Certainty"] = details.cert
+                        output.at[i, str(c_cleaned) + "_Certainty"] = details.cert
         return output
 
     @classmethod
@@ -212,21 +212,49 @@ class Pivot:
         data: pd.DataFrame,
         output: pd.DataFrame,
         certainty_filter: Optional[List[str]] = None,
+        include_details: bool = False,
     ) -> pd.DataFrame:
         """Pivot the dataset on diagnostic subcategories."""
         cols = cls._get_cols(data, "subcategories")
         print("Diagnostic subcategories in dataset:")
-        for s in cols:
-            print(s)
-            s_cleaned = "".join(filter(str.isalnum, s.strip()))
-            output[str(s_cleaned) + "_SubcategoryPresent"] = 0
-            for i, n in itertools.product(range(0, len(data)), cls.dx_ns):
-                details = cls._get_diagnosis_details(data, i, n)
-                if details.sub == s:
-                    # apply certainty filter if selected and set presence of diagnosis
-                    if cls._filter_pass(details.cert, certainty_filter):
-                        output = output.copy()
-                        output.at[i, str(s_cleaned) + "_SubcategoryPresent"] = 1
+        for c in cols:
+            print(c)
+            c_cleaned = "".join(filter(str.isalnum, c.strip()))
+            output[str(c_cleaned) + "_SubcategoryPresent"] = 0
+            if include_details:
+                # column for diagnostic level details
+                output[str(c_cleaned) + "_Details"] = ""
+            for i in range(0, len(data)):
+                cat_details = []
+                for n in cls.dx_ns:
+                    details = cls._get_diagnosis_details(data, i, n)
+                    if details.sub == c:
+                        # apply certainty filter if selected
+                        if cls._filter_pass(details.cert, certainty_filter):
+                            # set presence of subcategory
+                            output = output.copy()
+                            output.at[i, str(c_cleaned) + "_SubcategoryPresent"] = 1
+                            # create dictionary to store details on a diagnostic level
+                            match details.past_doc:
+                                case None:
+                                    past_doc = ""
+                                case _:
+                                    past_doc = details.past_doc
+                            cat_dict = {
+                                "diagnosis": details.diagnosis,
+                                "code": details.code,
+                                "certainty": details,
+                                "time": details.time,
+                                "past_documentation": past_doc,
+                            }
+                            # add diagnosis level details
+                            cat_details.append(cat_dict)
+                # add subcategory details to row
+                if all([len(cat_details) > 0, include_details]):
+                    output = output.copy()
+                    output.at[i, str(c_cleaned) + "_Details"] = str(cat_details).strip(
+                        "[]"
+                    )
         return output
 
     @classmethod
@@ -253,7 +281,11 @@ class Pivot:
                 for n in cls.dx_ns:
                     details = cls._get_diagnosis_details(data, i, n)
                     if details.cat == c:
+                        # apply certainty filter if selected
                         if cls._filter_pass(details.cert, certainty_filter):
+                            output = output.copy()
+                            # set presence of category
+                            output.at[i, str(c_cleaned) + "_CategoryPresent"] = 1
                             # create dictionary to store details on a diagnostic level
                             match details.past_doc:
                                 case None:
@@ -268,11 +300,9 @@ class Pivot:
                                 "time": details.time,
                                 "past_documentation": past_doc,
                             }
-                            output = output.copy()
-                            output.at[i, str(c_cleaned) + "_CategoryPresent"] = 1
                             # add diagnosis level details
                             cat_details.append(cat_dict)
-                # add category details to DataFrame
+                # add category details to row
                 if all([len(cat_details) > 0, include_details]):
                     output = output.copy()
                     output.at[i, str(c_cleaned) + "_Details"] = str(cat_details).strip(

@@ -32,7 +32,7 @@ class Interactive:
                 "message": "How would you like to pivot the data?",
                 "choices": [
                     "diagnoses",
-                    # "subcategories",
+                    "subcategories",
                     "categories",
                     "all",
                 ],
