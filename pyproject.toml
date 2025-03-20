@@ -10,7 +10,7 @@ packages = [{include = "hbn-preprocess", from = "src"}]
 [tool.poetry.dependencies]
 # Consider changing to >=3.11 python version
 python = ">3.11"
-matplotlib = "^3.10.0"
+matplotlib = "^3.10.1"
 pandas = "^2.2.3"
 questionary = "^2.1.0"
 kaleido = "0.2.1"
