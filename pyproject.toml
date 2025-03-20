@@ -5,13 +5,17 @@ description = "A repo for cleaning and pivoting the hbh clinician consensus data
 authors = ["maya-roberts <maya36247@gmail.com>"]
 license = ""
 readme = "README.md"
-packages = [{ include = "hbn-preprocess", from = "src" }]
+packages = [{include = "hbn-preprocess", from = "src"}]
 
 [tool.poetry.dependencies]
 # Consider changing to >=3.11 python version
 python = ">3.11"
 matplotlib = "^3.10.0"
 pandas = "^2.2.3"
+questionary = "^2.1.0"
+kaleido = "0.2.1"
+pillow = "^11.1.0"
+pytz = "^2025.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.3"
