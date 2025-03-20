@@ -3,6 +3,7 @@
 from pathlib import Path
 from typing import Literal
 
+import numpy as np
 import pandas as pd
 
 from .pivot import Pivot
@@ -19,11 +20,11 @@ class Processor:
             raise FileNotFoundError(f"File {path} not found.")
         data = pd.read_csv(path, low_memory=False)
         # replace missing subcategories with categories
-        # ns = [f"{n:02d}" for n in range(1, 11)]
-        # cat_cols = ["Diagnosis_ClinicianConsensus,DX_" + n + "_Cat" for n in ns]
-        # sub_cols = ["Diagnosis_ClinicianConsensus,DX_" + n + "_Sub" for n in ns]
-        # for sub, cat in zip(sub_cols, cat_cols):
-        #     data[sub] = np.where(data[sub].isnull(), data[cat], data[sub])
+        ns = [f"{n:02d}" for n in range(1, 11)]
+        cat_cols = ["Diagnosis_ClinicianConsensus,DX_" + n + "_Cat" for n in ns]
+        sub_cols = ["Diagnosis_ClinicianConsensus,DX_" + n + "_Sub" for n in ns]
+        for sub, cat in zip(sub_cols, cat_cols):
+            data[sub] = np.where(data[sub].isnull(), data[cat], data[sub])
         return data
 
     @staticmethod
@@ -49,7 +50,7 @@ class Processor:
         output: pd.DataFrame,
         by: Literal[
             "diagnoses",
-            # "subcategories",
+            "subcategories",
             "categories",
             "all",
         ] = "all",
@@ -60,17 +61,19 @@ class Processor:
         match by:
             case "diagnoses":
                 output = Pivot.diagnoses(data, output, certainty_filter)
-            # case "subcategories":
-            #     output = Pivot.subcategories(
-            #         data, output, certainty_filter, include_details
-            #     )
+            case "subcategories":
+                output = Pivot.subcategories(
+                    data, output, certainty_filter, include_details
+                )
             case "categories":
                 output = Pivot.categories(
                     data, output, certainty_filter, include_details
                 )
             case "all":
                 output = Pivot.diagnoses(data, output, certainty_filter)
-                output = Pivot.subcategories(data, output, certainty_filter)
+                output = Pivot.subcategories(
+                    data, output, certainty_filter, include_details
+                )
                 output = Pivot.categories(
                     data, output, certainty_filter, include_details
                 )
