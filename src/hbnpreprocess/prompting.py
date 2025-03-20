@@ -1,11 +1,8 @@
 """Prompts user for interactive data filtering."""
 
-import typing
-
 import questionary
 
-certs = ["Confirmed", "Presumptive", "RC", "RuleOut", "ByHx", "Unknown"]
-times = ["Current", "Past"]
+certs = ["Confirmed", "Presumptive", "RC", "RuleOut", "ByHx", "Past", "Unknown"]
 
 
 class Interactive:
@@ -16,8 +13,9 @@ class Interactive:
         """Prompts user for input path."""
         input_path = questionary.path(
             message="Please enter the path to the HBN data file.",
-            default="./data/Diagnosis_ClinicianConsensus.csv",
+            default="./data/",
         ).ask()
+        # TODO: Raise error if file does not exist
         output_path = questionary.path(
             message="Please enter the output path to save the processed data.",
             default=input_path.replace(".csv", "_processed.csv"),
@@ -25,7 +23,7 @@ class Interactive:
         return input_path, output_path
 
     @staticmethod
-    def _pivot() -> str:
+    def _get_pivot_by() -> str:
         """Prompts user for how to pivot the data."""
         questions = [
             {
@@ -34,7 +32,7 @@ class Interactive:
                 "message": "How would you like to pivot the data?",
                 "choices": [
                     "diagnoses",
-                    "subcategories",
+                    # "subcategories",
                     "categories",
                     "all",
                 ],
@@ -47,13 +45,19 @@ class Interactive:
         """Prompts user for filtering."""
         print("The HBN dataset includes diagnoses of varying levels of certainty:")
         print(
-            "confirmed, presumptive, requires confirmation (RC), rule out, and by "
-            "history (ByHx)."
+            "confirmed, presumptive, requires confirmation (RC), rule out, by "
+            "history (ByHx), and past."
         )
-        print(
-            "It also includes differing times of diagnosis or symptoms: current or "
-            "past."
+        url = "https://fcon_1000.projects.nitrc.org/indi/cmi_healthy_brain_network/Phenotypic.html#Diagnosis"
+        text = "HBN Diagnostic Process"
+        hyperlink = f"\x1b]8;;{url}\x1b\\{text}\x1b]8;;\x1b\\"
+        questionary.print(
+            "To learn more about the levels of diagnostic certainty and the HBN "
+            "dataset as a whole, click here:",
+            style="fg:orange bold",
         )
+        print("\033[1m" + "\33[93m" f"{hyperlink}")
+
         questions = [
             {
                 "type": "confirm",
@@ -70,22 +74,6 @@ class Interactive:
                 "when": lambda x: x["apply_cert"],
                 "validate": lambda a: (
                     True if len(a) > 0 else "You must select at least one certainty"
-                ),
-            },
-            {
-                "type": "confirm",
-                "name": "apply_time",
-                "message": "Filter the data by time of diagnosis?",
-                "default": True,
-            },
-            {
-                "type": "checkbox",
-                "name": "time_filter",
-                "message": "Please select which times of diagnosis should be included",
-                "choices": times,
-                "when": lambda x: x["apply_time"],
-                "validate": lambda a: (
-                    True if len(a) > 0 else "You must select at least one time"
                 ),
             },
         ]
@@ -120,37 +108,30 @@ class Interactive:
         return questionary.prompt(questions)["visualize"]
 
     @staticmethod
-    def _get_filter_args(resp: dict) -> typing.Tuple[list | None, list | None]:
+    def _get_filter_args(resp: dict) -> list | None:
         """Returns parameters to use in pivot function."""
         if resp["apply_cert"]:
             certainty_filter = resp["cert_filter"]
         else:
             certainty_filter = None
-        if resp["apply_time"]:
-            time_filter = resp["time_filter"]
-        else:
-            time_filter = None
-        return certainty_filter, time_filter
+        return certainty_filter
 
     @staticmethod
     def prompt() -> dict:
         """Runs the interactive prompts."""
         input_path, output_path = Interactive._get_paths()
-        by = Interactive._pivot()
-        if by == "subcategories" or by == "categories":
+        by = Interactive._get_pivot_by()
+        if by == "categories":
             include_details = Interactive._include_details()
         else:
             include_details = False
-        certainty_filter, time_filter = Interactive._get_filter_args(
-            Interactive._data_filter()
-        )
+        certainty_filter = Interactive._get_filter_args(Interactive._data_filter())
         viz = Interactive._visualize()
         return {
             "input_path": input_path,
             "output_path": output_path,
             "by": by,
             "certainty_filter": certainty_filter,
-            "time_filter": time_filter,
             "include_details": include_details,
             "viz": viz,
         }
