@@ -54,7 +54,7 @@ class Interactive:
         return questionary.prompt(questions)["pivot_by"]
 
     @staticmethod
-    def _data_filter(**kwargs: dict) -> dict:
+    def _data_filter(**kwargs: object) -> dict:
         """Prompts user for filtering."""
         print("The HBN dataset includes diagnoses of varying levels of certainty:")
         print(
