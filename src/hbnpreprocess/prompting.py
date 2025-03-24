@@ -1,5 +1,7 @@
 """Prompts user for interactive data filtering."""
 
+from pathlib import Path
+
 import questionary
 
 certs = ["Confirmed", "Presumptive", "RC", "RuleOut", "ByHx", "Past", "Unknown"]
@@ -15,11 +17,22 @@ class Interactive:
             message="Please enter the path to the HBN data file.",
             default="./data/",
         ).ask()
-        # TODO: Raise error if file does not exist
+        while not Path(input_path).exists():
+            print(f"File {input_path} not found.")
+            input_path = questionary.path(
+                message="Please enter the path to the HBN data file.",
+                default="./data/",
+            ).ask()
         output_path = questionary.path(
             message="Please enter the output path to save the processed data.",
             default=input_path.replace(".csv", "_processed.csv"),
         ).ask()
+        while not Path(output_path).parent.exists():
+            print(f"Directory {str(Path(output_path).parent)} not found.")
+            output_path = questionary.path(
+                message="Please enter the output path to save the processed data.",
+                default=input_path.replace(".csv", "_processed.csv"),
+            ).ask()
         return input_path, output_path
 
     @staticmethod
