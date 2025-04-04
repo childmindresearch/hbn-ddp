@@ -17,7 +17,7 @@
 Install this package via :
 
 ```sh
-pip install hbn-preprocess
+pip install git+https://github.com/childmindresearch/hbn-preprocess.git
 ```
 
 ## Run interactively
