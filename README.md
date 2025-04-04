@@ -29,6 +29,6 @@ python -m hbnpreprocess
 from hbnpreprocess.hbn_data import HBNData
 HBNData.process()
 ```
-Notebook example: [Notebook Example](https://github.com/childmindresearch/hbn-preprocess/blob/main/examples/pivot_example.ipynb)
+[Notebook Example](https://github.com/childmindresearch/hbn-preprocess/blob/main/examples/pivot_example.ipynb)
 
 ## Links or References
