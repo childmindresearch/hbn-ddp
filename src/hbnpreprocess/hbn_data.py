@@ -30,7 +30,7 @@ class HBNData:
             "categories",
             "all",
         ] = "all",
-        certainty_filter: list[str] | None = None,
+        qualifier_filter: list[str] | None = None,
         include_details: bool = False,
         viz: bool = True,
     ) -> pd.DataFrame:
@@ -41,10 +41,10 @@ class HBNData:
             output_path: The path to save the processed data.
             by: The level of detail to pivot the data Options are "diagnosis",
             "subcategory", "category", and "all". Default is "all".
-            certainty_filter: The list of certainty levels to include. Accepted values
+            qualifier_filter: The list of qualifiers to include. Accepted values
             are "Confirmed", "Presumptive", "RC", "RuleOut", "ByHx", "Past", and
             "Unknown".
-            Default is None, which will include all certainty levels.
+            Default is None, which will include all.
             include_details: When pivoting by category or subcategory, whether to
             include diagnosis level details in a dict column.
             viz: Whether to visualize the data.
@@ -54,7 +54,7 @@ class HBNData:
         """
         data = Processor.load(input_path)
         output = Processor.copy(data)
-        output = Processor.pivot(data, output, by, certainty_filter, include_details)
+        output = Processor.pivot(data, output, by, qualifier_filter, include_details)
         if viz:
             visualize(output, by)
         write(output, output_path=output_path, input_path=input_path)

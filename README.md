@@ -10,7 +10,7 @@
 
 ## Features
 
-- Diagnostic data preprocessing: Pivots the data to a wider format, organized by specific diagnoses or categories rather than diagnosis numbers. Includes the option to filter by diagnostic certainty level or time of diagnosis. Option to either run interactively or install as a package and use in a notebook.
+- Diagnostic data preprocessing: Pivots the data to a wider format, organized by specific diagnoses or categories rather than diagnosis numbers. Includes the option to filter by diagnostic qualifier (certainty or time of diagnosis). Option to either run interactively or install as a package and use in a notebook.
 
 ## Installation
 
