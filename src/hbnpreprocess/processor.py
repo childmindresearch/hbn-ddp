@@ -19,6 +19,7 @@ class Processor:
         if not path.exists():
             raise FileNotFoundError(f"File {path} not found.")
         data = pd.read_csv(path, low_memory=False)
+        # TODO: raise error if data does not resemble HBN data
         # replace missing subcategories with categories
         ns = [f"{n:02d}" for n in range(1, 11)]
         cat_cols = ["Diagnosis_ClinicianConsensus,DX_" + n + "_Cat" for n in ns]
