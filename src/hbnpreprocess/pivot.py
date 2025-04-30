@@ -56,6 +56,8 @@ class Pivot:
             cols = subs
         elif by == "categories":
             cols = cats
+        # remove any non-string values if nulls were not removed before
+        cols = [col for col in cols if isinstance(col, str)]
         cols.sort()
         return cols
 
