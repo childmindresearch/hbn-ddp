@@ -39,7 +39,7 @@ class Pivot:
 
     @classmethod
     def _clean_dx_value(cls, value: str) -> str:
-        return str(filter(str.isalnum, value.strip()))
+        return "".join(filter(str.isalnum, str(value).strip()))
 
     @classmethod
     def _get_values(
@@ -59,9 +59,9 @@ class Pivot:
             else []
         )
         return sorted(
-            map(
-                cls._clean_dx_value,
-                set(data[columns].values.flatten()) - cls.INVALID_DX_VALS,
+            (
+                set(map(cls._clean_dx_value, data[columns].values.flatten()))
+                - cls.INVALID_DX_VALS
             )
         )
 
@@ -250,7 +250,7 @@ class Pivot:
         cls,
         data: pd.DataFrame,
         output: pd.DataFrame,
-        qualifier_filter: Optional[list[str]] = None,
+        qualifier_filter: list[str] | None = None,
         include_details: bool = False,
     ) -> pd.DataFrame:
         """Pivot the dataset on diagnostic categories."""
