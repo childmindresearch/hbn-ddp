@@ -2,14 +2,14 @@
 
 import itertools
 from dataclasses import dataclass
-from typing import List, Literal, Optional
+from typing import Literal, Optional
 
 import numpy as np
 import pandas as pd
 
 
 @dataclass
-class Diag_Info:
+class DxInfo:
     """Dataclass for storing diagnosis-specific information."""
 
     diagnosis: str
@@ -24,40 +24,46 @@ class Diag_Info:
 class Pivot:
     """Class for pivoting the data."""
 
-    dx_ns = [f"{n:02d}" for n in range(1, 11)]
+    DX_NS = [f"{n:02d}" for n in range(1, 11)]
+    DX_COLS = ["Diagnosis_ClinicianConsensus,DX_" + n for n in DX_NS]
+    DX_CAT_COLS = ["Diagnosis_ClinicianConsensus,DX_" + n + "_Cat" for n in DX_NS]
+    DX_SUB_COLS = ["Diagnosis_ClinicianConsensus,DX_" + n + "_Sub" for n in DX_NS]
+    INVALID_DX_VALS = {
+        "nan",
+        "No Diagnosis Given",
+        "No Diagnosis Given: Incomplete Eval",
+        "",
+        " ",
+        np.nan,
+    }
 
     @classmethod
-    def _get_cols(
+    def _clean_dx_value(cls, value: str) -> str:
+        return str(filter(str.isalnum, value.strip()))
+
+    @classmethod
+    def _get_values(
         cls,
         data: pd.DataFrame,
         by: Literal["diagnoses", "subcategories", "categories"],
-    ) -> List[str]:
+    ) -> list[str]:
         # TODO: this can be cleaned up and simplified
         """Get the unique values to create columns for the pivot."""
-        cat_cols = ["Diagnosis_ClinicianConsensus,DX_" + n + "_Cat" for n in cls.dx_ns]
-        sub_cols = ["Diagnosis_ClinicianConsensus,DX_" + n + "_Sub" for n in cls.dx_ns]
-        dx_cols = ["Diagnosis_ClinicianConsensus,DX_" + n for n in cls.dx_ns]
-
-        remove = [
-            "nan",
-            "No Diagnosis Given",
-            "No Diagnosis Given: Incomplete Eval",
-            "",
-            " ",
-            np.nan,
-        ]
-        cats = list(set(data[cat_cols].values.flatten()) - set(remove))
-        subs = list(set(data[sub_cols].values.flatten()) - set(remove))
-        dxes = list(set(data[dx_cols].values.flatten()) - set(remove))
-
-        if by == "diagnoses":
-            cols = dxes
-        elif by == "subcategories":
-            cols = subs
-        elif by == "categories":
-            cols = cats
-        cols.sort()
-        return cols
+        columns = (
+            cls.DX_COLS
+            if by == "diagnoses"
+            else cls.DX_CAT_COLS
+            if by == "categories"
+            else cls.DX_SUB_COLS
+            if by == "subcategories"
+            else []
+        )
+        return sorted(
+            map(
+                cls._clean_dx_value,
+                set(data[columns].values.flatten()) - cls.INVALID_DX_VALS,
+            )
+        )
 
     @staticmethod
     def _set_qualifier(data: pd.DataFrame, i: int, col: str) -> str:
@@ -71,62 +77,62 @@ class Pivot:
 
         byhx = all(
             [
-                data.at[i, str(col) + "_Confirmed"] != 1,
-                data.at[i, str(col) + "_Presum"] != 1,
-                data.at[i, str(col) + "_RC"] != 1,
-                data.at[i, str(col) + "_RuleOut"] != 1,
-                data.at[i, str(col) + "_ByHx"] == 1,
-                data.at[i, str(col) + "_Time"] == 1,
+                data.at[i, col + "_Confirmed"] != 1,
+                data.at[i, col + "_Presum"] != 1,
+                data.at[i, col + "_RC"] != 1,
+                data.at[i, col + "_RuleOut"] != 1,
+                data.at[i, col + "_ByHx"] == 1,
+                data.at[i, col + "_Time"] == 1,
             ]
         )
         confirmed = all(
             [
-                data.at[i, str(col) + "_Confirmed"] == 1,
-                data.at[i, str(col) + "_Presum"] != 1,
-                data.at[i, str(col) + "_RC"] != 1,
-                data.at[i, str(col) + "_RuleOut"] != 1,
-                data.at[i, str(col) + "_ByHx"] != 1,
-                data.at[i, str(col) + "_Time"] == 1,
+                data.at[i, col + "_Confirmed"] == 1,
+                data.at[i, col + "_Presum"] != 1,
+                data.at[i, col + "_RC"] != 1,
+                data.at[i, col + "_RuleOut"] != 1,
+                data.at[i, col + "_ByHx"] != 1,
+                data.at[i, col + "_Time"] == 1,
             ]
         )
         presum = all(
             [
-                data.at[i, str(col) + "_Confirmed"] != 1,
-                data.at[i, str(col) + "_Presum"] == 1,
-                data.at[i, str(col) + "_RC"] != 1,
-                data.at[i, str(col) + "_RuleOut"] != 1,
-                data.at[i, str(col) + "_ByHx"] != 1,
-                data.at[i, str(col) + "_Time"] == 1,
+                data.at[i, col + "_Confirmed"] != 1,
+                data.at[i, col + "_Presum"] == 1,
+                data.at[i, col + "_RC"] != 1,
+                data.at[i, col + "_RuleOut"] != 1,
+                data.at[i, col + "_ByHx"] != 1,
+                data.at[i, col + "_Time"] == 1,
             ]
         )
         rc = all(
             [
-                data.at[i, str(col) + "_Confirmed"] != 1,
-                data.at[i, str(col) + "_Presum"] != 1,
-                data.at[i, str(col) + "_RC"] == 1,
-                data.at[i, str(col) + "_RuleOut"] != 1,
-                data.at[i, str(col) + "_ByHx"] != 1,
-                data.at[i, str(col) + "_Time"] == 1,
+                data.at[i, col + "_Confirmed"] != 1,
+                data.at[i, col + "_Presum"] != 1,
+                data.at[i, col + "_RC"] == 1,
+                data.at[i, col + "_RuleOut"] != 1,
+                data.at[i, col + "_ByHx"] != 1,
+                data.at[i, col + "_Time"] == 1,
             ]
         )
         ruleout = all(
             [
-                data.at[i, str(col) + "_Confirmed"] != 1,
-                data.at[i, str(col) + "_Presum"] != 1,
-                data.at[i, str(col) + "_RC"] != 1,
-                data.at[i, str(col) + "_RuleOut"] == 1,
-                data.at[i, str(col) + "_ByHx"] != 1,
-                data.at[i, str(col) + "_Time"] == 1,
+                data.at[i, col + "_Confirmed"] != 1,
+                data.at[i, col + "_Presum"] != 1,
+                data.at[i, col + "_RC"] != 1,
+                data.at[i, col + "_RuleOut"] == 1,
+                data.at[i, col + "_ByHx"] != 1,
+                data.at[i, col + "_Time"] == 1,
             ]
         )
         past = all(
             [
-                data.at[i, str(col) + "_Confirmed"] != 1,
-                data.at[i, str(col) + "_Presum"] != 1,
-                data.at[i, str(col) + "_RC"] != 1,
-                data.at[i, str(col) + "_RuleOut"] != 1,
-                data.at[i, str(col) + "_ByHx"] != 1,
-                data.at[i, str(col) + "_Time"] == 2,
+                data.at[i, col + "_Confirmed"] != 1,
+                data.at[i, col + "_Presum"] != 1,
+                data.at[i, col + "_RC"] != 1,
+                data.at[i, col + "_RuleOut"] != 1,
+                data.at[i, col + "_ByHx"] != 1,
+                data.at[i, col + "_Time"] == 2,
             ]
         )
         if byhx:
@@ -147,63 +153,54 @@ class Pivot:
         return qual
 
     @classmethod
-    def _get_diagnosis_details(cls, data: pd.DataFrame, i: int, n: str) -> Diag_Info:
-        col = "Diagnosis_ClinicianConsensus,DX_" + str(n)
-        return Diag_Info(
-            diagnosis=data.at[i, str(col)],
-            sub=data.at[i, str(col) + "_Sub"],
-            cat=data.at[i, str(col) + "_Cat"],
-            code=data.at[i, str(col) + "_Code"],
-            past_doc=data.at[i, str(col) + "_Past_Doc"],
+    def _get_diagnosis_details(cls, data: pd.DataFrame, i: int, n: str) -> DxInfo:
+        col = f"Diagnosis_ClinicianConsensus,DX_{n}"
+        return DxInfo(
+            diagnosis=data.at[i, col],
+            sub=data.at[i, col + "_Sub"],
+            cat=data.at[i, col + "_Cat"],
+            code=data.at[i, col + "_Code"],
+            past_doc=data.at[i, col + "_Past_Doc"],
             qual=cls._set_qualifier(data, i, col),
-            time=data.at[i, str(col) + "_Time"],
+            time=data.at[i, col + "_Time"],
         )
 
     @classmethod
-    def _filter_pass(cls, qual: str, qualifier_filter: Optional[List[str]]) -> bool:
+    def _filter_pass(cls, qual: str, qualifier_filter: list[str] | None) -> bool:
         """Apply the filter."""
-        if qualifier_filter is None:
-            return True
-        else:
-            return qualifier_filter is not None and qual in qualifier_filter
+        return qualifier_filter is None or qual in qualifier_filter
 
     @classmethod
     def diagnoses(
         cls,
         data: pd.DataFrame,
         output: pd.DataFrame,
-        qualifier_filter: Optional[List[str]] = None,
+        qualifier_filter: Optional[list[str]] = None,
     ) -> pd.DataFrame:
         """Pivot the data by diagnoses."""
         repeated_vars = ["_Cat", "_Sub", "_Spec", "_Code", "_Past_Doc"]
-        cols = cls._get_cols(data, "diagnoses")
+        dx_values = cls._get_values(data, "diagnoses")
         print("Diagnoses in dataset:")
-        for c in cols:
-            print(c)
-            c_cleaned = "".join(filter(str.isalnum, c.strip()))
+        for dx_val in dx_values:
+            print(dx_val)
             # TODO: Try concatenating all new values at once for performance
-            output[str(c_cleaned) + "_DiagnosisPresent"] = 0
-            output[str(c_cleaned) + "_Certainty"] = None
-            for var in repeated_vars:
-                output[str(c_cleaned) + str(var)] = None
-            for i, n in itertools.product(range(0, len(data)), cls.dx_ns):
+            output[dx_val + "_DiagnosisPresent"] = 0
+            output[dx_val + "_Certainty"] = None
+            dx_cols = [dx_val + var for var in repeated_vars]
+            output[dx_cols] = None
+            for i, n in itertools.product(range(0, len(data)), cls.DX_NS):
                 details = cls._get_diagnosis_details(data, i, n)
-                col = "Diagnosis_ClinicianConsensus,DX_" + str(n)
+                col = f"Diagnosis_ClinicianConsensus,DX_{n}"
                 # locate presence of specific diagnosis
-                if details.diagnosis == c:
+                if details.diagnosis == dx_val:
                     # apply filter if selected and set presence of diagnosis
                     if cls._filter_pass(details.qual, qualifier_filter):
-                        output = output.copy()
-                        output.at[i, str(c_cleaned) + "_DiagnosisPresent"] = 1
+                        output.at[i, f"{dx_val}_DiagnosisPresent"] = 1
                         # variables repeated by diagnosis
                         for var in repeated_vars:
-                            output = output.copy()
-                            output.at[i, str(c_cleaned) + str(var)] = data.at[
-                                i, str(col) + str(var)
-                            ]
+                            output.at[i, dx_val + var] = data.at[i, col + var]
                         # add qualifier
-                        output = output.copy()
-                        output.at[i, str(c_cleaned) + "_Qualifier"] = details.qual
+                        output.at[i, f"{dx_val}_Qualifier"] = details.qual
         return output
 
     @classmethod
@@ -211,50 +208,41 @@ class Pivot:
         cls,
         data: pd.DataFrame,
         output: pd.DataFrame,
-        qualifier_filter: Optional[List[str]] = None,
+        qualifier_filter: Optional[list[str]] = None,
         include_details: bool = False,
     ) -> pd.DataFrame:
         """Pivot the dataset on diagnostic subcategories."""
-        cols = cls._get_cols(data, "subcategories")
+        dx_values = cls._get_values(data, "subcategories")
         print("Diagnostic subcategories in dataset:")
-        for c in cols:
-            print(c)
-            c_cleaned = "".join(filter(str.isalnum, c.strip()))
-            output[str(c_cleaned) + "_SubcategoryPresent"] = 0
+        for dx_val in dx_values:
+            output[dx_val + "_SubcategoryPresent"] = 0
             if include_details:
                 # column for diagnostic level details
-                output[str(c_cleaned) + "_Details"] = ""
+                output[dx_val + "_Details"] = ""
             for i in range(0, len(data)):
                 cat_details = []
-                for n in cls.dx_ns:
+                for n in cls.DX_NS:
                     details = cls._get_diagnosis_details(data, i, n)
-                    if details.sub == c:
+                    if cls._clean_dx_value(details.sub) == dx_val:
                         # apply filter if selected
                         if cls._filter_pass(details.qual, qualifier_filter):
                             # set presence of subcategory
-                            output = output.copy()
-                            output.at[i, str(c_cleaned) + "_SubcategoryPresent"] = 1
+                            output.at[i, dx_val + "_SubcategoryPresent"] = 1
                             # create dictionary to store details on a diagnostic level
-                            match details.past_doc:
-                                case None:
-                                    past_doc = ""
-                                case _:
-                                    past_doc = details.past_doc
                             cat_dict = {
                                 "diagnosis": details.diagnosis,
                                 "code": details.code,
                                 "qualifier": details.qual,
                                 "time": details.time,
-                                "past_documentation": past_doc,
+                                "past_documentation": ""
+                                if details.past_doc is None
+                                else details.past_doc,
                             }
                             # add diagnosis level details
                             cat_details.append(cat_dict)
                 # add subcategory details to row
-                if all([len(cat_details) > 0, include_details]):
-                    output = output.copy()
-                    output.at[i, str(c_cleaned) + "_Details"] = str(cat_details).strip(
-                        "[]"
-                    )
+                if include_details and len(cat_details) > 0:
+                    output.at[i, dx_val + "_Details"] = str(cat_details).strip("[]")
         return output
 
     @classmethod
@@ -262,51 +250,42 @@ class Pivot:
         cls,
         data: pd.DataFrame,
         output: pd.DataFrame,
-        qualifier_filter: Optional[List[str]] = None,
+        qualifier_filter: Optional[list[str]] = None,
         include_details: bool = False,
     ) -> pd.DataFrame:
         """Pivot the dataset on diagnostic categories."""
-        cols = cls._get_cols(data, "categories")
+        dx_values = cls._get_values(data, "categories")
         print("Diagnostic categories in dataset:")
-        for c in cols:
-            print(c)
-            c_cleaned = "".join(filter(str.isalnum, c.strip()))
+        for dx_val in dx_values:
             # column for the presence of categories
-            output[str(c_cleaned) + "_CategoryPresent"] = 0
+            output[dx_val + "_CategoryPresent"] = 0
             if include_details:
                 # column for diagnostic level details
-                output[str(c_cleaned) + "_Details"] = ""
+                output[dx_val + "_Details"] = ""
             for i in range(0, len(data)):
                 cat_details = []
-                for n in cls.dx_ns:
+                for n in cls.DX_NS:
                     details = cls._get_diagnosis_details(data, i, n)
-                    if details.cat == c:
+                    if cls._clean_dx_value(details.cat) == dx_val:
                         # apply filter if selected
                         if cls._filter_pass(details.qual, qualifier_filter):
-                            output = output.copy()
                             # set presence of category
-                            output.at[i, str(c_cleaned) + "_CategoryPresent"] = 1
+                            output.at[i, dx_val + "_CategoryPresent"] = 1
                             # create dictionary to store details on a diagnostic level
-                            match details.past_doc:
-                                case None:
-                                    past_doc = ""
-                                case _:
-                                    past_doc = details.past_doc
                             cat_dict = {
                                 "diagnosis": details.diagnosis,
                                 "subcategory": details.sub,
                                 "code": details.code,
                                 "qualifier": details,
                                 "time": details.time,
-                                "past_documentation": past_doc,
+                                "past_documentation": ""
+                                if details.past_doc is None
+                                else details.past_doc,
                             }
                             # add diagnosis level details
                             cat_details.append(cat_dict)
                 # add category details to row
-                if all([len(cat_details) > 0, include_details]):
-                    output = output.copy()
-                    output.at[i, str(c_cleaned) + "_Details"] = str(cat_details).strip(
-                        "[]"
-                    )
+                if include_details and len(cat_details) > 0:
+                    output.at[i, dx_val + "_Details"] = str(cat_details).strip("[]")
 
         return output
