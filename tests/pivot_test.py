@@ -13,8 +13,7 @@ def test_pivot() -> None:
     """Test pivot function."""
     data = Processor.load("tests/test_data.csv")
     print(data)
-    output = Processor.copy(data)
-    output = Processor.pivot(data, output)
+    output = Processor.pivot(data)
     print(output)
     assert output is not None
     assert output is not data

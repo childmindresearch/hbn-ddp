@@ -53,8 +53,7 @@ class HBNData:
             The processed data.
         """
         data = Processor.load(input_path)
-        output = Processor.copy(data)
-        output = Processor.pivot(data, output, by, qualifier_filter, include_details)
+        output = Processor.pivot(data, by, qualifier_filter, include_details)
         if viz:
             visualize(output, by)
         write(output, output_path=output_path, input_path=input_path)

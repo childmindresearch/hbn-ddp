@@ -3,7 +3,6 @@
 from pathlib import Path
 from typing import Literal
 
-import numpy as np
 import pandas as pd
 
 from .pivot import Pivot
@@ -19,17 +18,28 @@ class Processor:
         if not path.exists():
             raise FileNotFoundError(f"File {path} not found.")
         data = pd.read_csv(path, low_memory=False)
-        # TODO: raise error if data does not resemble HBN data
-        # replace missing subcategories with categories
-        ns = [f"{n:02d}" for n in range(1, 11)]
-        cat_cols = ["Diagnosis_ClinicianConsensus,DX_" + n + "_Cat" for n in ns]
-        sub_cols = ["Diagnosis_ClinicianConsensus,DX_" + n + "_Sub" for n in ns]
-        for sub, cat in zip(sub_cols, cat_cols):
-            data[sub] = np.where(data[sub].isnull(), data[cat], data[sub])
+        if data.filter(like="Diagnosis_ClinicianConsensus").columns.empty:
+            raise ValueError(
+                "No columns found with 'Diagnosis_ClinicianConsensus' in the name."
+            )
+        return Processor._preprocess_categories(data)
+
+    @staticmethod
+    def _preprocess_categories(data: pd.DataFrame) -> pd.DataFrame:
+        """Preprocess the categories."""
+        cat_sub_cols = [
+            (
+                f"Diagnosis_ClinicianConsensus,DX_{n:02d}_Cat",
+                f"Diagnosis_ClinicianConsensus,DX_{n:02d}_Sub",
+            )
+            for n in range(1, 11)
+        ]
+        for cat, sub in cat_sub_cols:
+            data[sub] = data[sub].fillna(data[cat])
         return data
 
     @staticmethod
-    def copy(data: pd.DataFrame) -> pd.DataFrame:
+    def _copy_static_columns(data: pd.DataFrame) -> pd.DataFrame:
         """Copy the subject data for output."""
         unchanged_cols = [
             "Identifiers",
@@ -48,7 +58,6 @@ class Processor:
     @staticmethod
     def pivot(
         data: pd.DataFrame,
-        output: pd.DataFrame,
         by: Literal[
             "diagnoses",
             "subcategories",
@@ -59,6 +68,7 @@ class Processor:
         include_details: bool = False,
     ) -> pd.DataFrame:
         """Pivot and filter the data."""
+        output = Processor._copy_static_columns(data)
         match by:
             case "diagnoses":
                 output = Pivot.diagnoses(data, output, qualifier_filter)
