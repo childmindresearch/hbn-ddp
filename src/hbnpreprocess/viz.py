@@ -20,9 +20,11 @@ def _bar(
 
     """
     filtered_df = output.filter(like=col_type)
-    sums = filtered_df.sum().sort_values()
+    sums = filtered_df.sum()
+    sums = sums.sort_values()
+    labels = list(sums.index)
     sums = list(sums.reset_index(drop=True))
-    new_labels = [_clean_label(label, col_type) for label in filtered_df.columns]
+    new_labels = [_clean_label(label, col_type) for label in labels]
 
     fig = go.Figure()
     name = col_type.replace("Present", "")
