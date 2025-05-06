@@ -66,6 +66,68 @@ class Pivot:
         )
 
     @staticmethod
+    def _qualifier_series(data: pd.DataFrame) -> pd.Series:
+        """Get the qualifier for a diagnosis."""
+        for dx_number in Pivot.DX_NS:
+            col_prefix = "Diagnosis_ClinicianConsensus,DX_" + dx_number
+            byhx = (
+                (data.loc[:, col_prefix + "_Confirmed"] != 1)
+                & (data.loc[:, col_prefix + "_Presum"] != 1)
+                & (data.loc[:, col_prefix + "_RC"] != 1)
+                & (data.loc[:, col_prefix + "_RuleOut"] != 1)
+                & (data.loc[:, col_prefix + "_ByHx"] == 1)
+                & (data.loc[:, col_prefix + "_Time"] == 1)
+            )
+            confirmed = (
+                (data.loc[:, col_prefix + "_Confirmed"] == 1)
+                & (data.loc[:, col_prefix + "_Presum"] != 1)
+                & (data.loc[:, col_prefix + "_RC"] != 1)
+                & (data.loc[:, col_prefix + "_RuleOut"] != 1)
+                & (data.loc[:, col_prefix + "_ByHx"] != 1)
+                & (data.loc[:, col_prefix + "_Time"] == 1)
+            )
+            presum = (
+                (data.loc[:, col_prefix + "_Confirmed"] != 1)
+                & (data.loc[:, col_prefix + "_Presum"] == 1)
+                & (data.loc[:, col_prefix + "_RC"] != 1)
+                & (data.loc[:, col_prefix + "_RuleOut"] != 1)
+                & (data.loc[:, col_prefix + "_ByHx"] != 1)
+                & (data.loc[:, col_prefix + "_Time"] == 1)
+            )
+            rc = (
+                (data.loc[:, col_prefix + "_Confirmed"] != 1)
+                & (data.loc[:, col_prefix + "_Presum"] != 1)
+                & (data.loc[:, col_prefix + "_RC"] == 1)
+                & (data.loc[:, col_prefix + "_RuleOut"] != 1)
+                & (data.loc[:, col_prefix + "_ByHx"] != 1)
+                & (data.loc[:, col_prefix + "_Time"] == 1)
+            )
+            ruleout = (
+                (data.loc[:, col_prefix + "_Confirmed"] != 1)
+                & (data.loc[:, col_prefix + "_Presum"] != 1)
+                & (data.loc[:, col_prefix + "_RC"] != 1)
+                & (data.loc[:, col_prefix + "_RuleOut"] == 1)
+                & (data.loc[:, col_prefix + "_ByHx"] != 1)
+                & (data.loc[:, col_prefix + "_Time"] == 1)
+            )
+            past = (
+                (data.loc[:, col_prefix + "_Confirmed"] != 1)
+                & (data.loc[:, col_prefix + "_Presum"] != 1)
+                & (data.loc[:, col_prefix + "_RC"] != 1)
+                & (data.loc[:, col_prefix + "_RuleOut"] != 1)
+                & (data.loc[:, col_prefix + "_ByHx"] != 1)
+                & (data.loc[:, col_prefix + "_Time"] == 2)
+            )
+            output = pd.Series(index=data.index, dtype="object").fillna("Unknown")
+            output[past] = "Past"
+            output[ruleout] = "RuleOut"
+            output[rc] = "RC"
+            output[presum] = "Presumptive"
+            output[confirmed] = "Confirmed"
+            output[byhx] = "ByHx"
+            return output
+
+    @staticmethod
     def _set_qualifier(data: pd.DataFrame, i: int, col: str) -> str:
         """Get the qualifier for a diagnosis."""
         # TODO: Consider using an enum for the certainty levels.
@@ -175,7 +237,7 @@ class Pivot:
         cls,
         data: pd.DataFrame,
         output: pd.DataFrame,
-        qualifier_filter: Optional[list[str]] = None,
+        qualifier_filter: list[str] | None = None,
     ) -> pd.DataFrame:
         """Pivot the data by diagnoses."""
         repeated_vars = ["_Cat", "_Sub", "_Spec", "_Code", "_Past_Doc"]
@@ -208,7 +270,7 @@ class Pivot:
         cls,
         data: pd.DataFrame,
         output: pd.DataFrame,
-        qualifier_filter: Optional[list[str]] = None,
+        qualifier_filter: list[str] | None = None,
         include_details: bool = False,
     ) -> pd.DataFrame:
         """Pivot the dataset on diagnostic subcategories."""
@@ -246,6 +308,18 @@ class Pivot:
         return output
 
     @classmethod
+    def _qualifier_map(cls, row: pd.Series) -> pd.Series:
+        """Map the qualifiers to a boolean value."""
+        cols = [f"Diagnosis_ClinicianConsensus,DX_{n}" for n in cls.DX_NS]
+        output = pd.Series(index=row.index, dtype=bool)
+        for c in cols:
+            output.loc[[f"DX_Qualifier_{n}" for n in cls.DX_NS]] = [
+                # TODO Update set_qualifier to use take Series
+                cls._set_qualifier(row, n, c)
+                for n in cls.DX_NS
+            ]
+
+    @classmethod
     def categories(
         cls,
         data: pd.DataFrame,
@@ -254,6 +328,39 @@ class Pivot:
         include_details: bool = False,
     ) -> pd.DataFrame:
         """Pivot the dataset on diagnostic categories."""
+        # TODO: Gen column of cleaned values for categories
+        # Get unique values
+        # Set _CatPresent to 0 for all
+        # Set _Details to "" for all if include_details
+        # Replace loop with matrix op using where or bool mask
+        # Set details using column concatenation
+        data.loc[:, cls.DX_CAT_COLS] = (
+            data.loc[:, cls.DX_CAT_COLS].fillna("").astype(str)
+        )
+        data.loc[:, cls.DX_CAT_COLS] = data.loc[:, cls.DX_CAT_COLS].apply(
+            lambda c: c.str.replace("\W", "", regex=True), axis=1
+        )
+        dx_values = (
+            data.loc[:, cls.DX_CAT_COLS].melt()["value"].drop_duplicates().to_list()
+        )
+        data.loc[:, [f"DX_Qualifier_{n}" for n in cls.DX_NS]] = (
+            True
+            if qualifier_filter is None
+            else data.loc[:, cls.DX_CAT_COLS].apply(
+                lambda c: cls._qualifier_map, axis=1
+            )
+        )
+        # TODO integrate qualifier filter
+        for dx_val in dx_values:
+            data.loc[:, dx_val + "_CategoryPresent"] = (
+                data.loc[:, cls.DX_CAT_COLS]
+                .apply(lambda c: c.str.contains(dx_val, na=False, regex=False))
+                .apply(lambda c: c.any(), axis=1)
+                .astype(int)
+            )
+        if include_details:
+            # column for diagnostic level details
+            data.loc[:, [dx + "_Details" for dx in dx_values]] = ""
         dx_values = cls._get_values(data, "categories")
         print("Diagnostic categories in dataset:")
         for dx_val in dx_values:
