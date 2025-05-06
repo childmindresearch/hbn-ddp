@@ -20,29 +20,36 @@ def _bar(
 
     """
     filtered_df = output.filter(like=col_type)
-    sums = filtered_df.sum()
-    sums = sums.sort_values()
+    sums = filtered_df.sum().sort_values()
     labels = list(sums.index)
     sums = list(sums.reset_index(drop=True))
     new_labels = [_clean_label(label, col_type) for label in labels]
 
     fig = go.Figure()
-    name = col_type.replace("Present", "")
     fig.add_trace(
         go.Bar(
             y=new_labels,
             x=sums,
-            name=name,
             orientation="h",
             text=sums,
         )
     )
 
+    match col_type:
+        case "DiagnosisPresent":
+            title = "Incidence of Diagnoses in HBN Data"
+        case "SubcategoryPresent":
+            title = "Incidence of Subcategories in HBN Data"
+        case "CategoryPresent":
+            title = "Incidence of Categories in HBN Data"
+        case _:
+            raise ValueError(f"Invalid value for 'col_type': {col_type}")
+
     fig.update_layout(
         width=1200,
         height=1500,
-        title="Incidence of " + str(name) + " in HBN Data",
-        yaxis_title="Disorder",
+        title=title,
+        yaxis_title=col_type.replace("Present", ""),
         xaxis_title="Number of Participants",
     )
     fig.update_yaxes(
