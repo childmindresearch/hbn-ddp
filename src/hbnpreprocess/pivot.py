@@ -182,7 +182,6 @@ class Pivot:
         dx_values = cls._get_values(data, "diagnoses")
         print("Diagnoses in dataset:")
         for dx_val in dx_values:
-            print(dx_val)
             # TODO: Try concatenating all new values at once for performance
             output[dx_val + "_DiagnosisPresent"] = 0
             output[dx_val + "_Certainty"] = None
@@ -192,7 +191,7 @@ class Pivot:
                 details = cls._get_diagnosis_details(data, i, n)
                 col = f"Diagnosis_ClinicianConsensus,DX_{n}"
                 # locate presence of specific diagnosis
-                if details.diagnosis == dx_val:
+                if cls._clean_dx_value(details.diagnosis) == dx_val:
                     # apply filter if selected and set presence of diagnosis
                     if cls._filter_pass(details.qual, qualifier_filter):
                         output.at[i, f"{dx_val}_DiagnosisPresent"] = 1
