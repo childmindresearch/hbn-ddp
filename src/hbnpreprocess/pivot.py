@@ -182,9 +182,10 @@ class Pivot:
         dx_values = cls._get_values(data, "diagnoses")
         print("Diagnoses in dataset:")
         for dx_val in dx_values:
+            print(dx_val)
             # TODO: Try concatenating all new values at once for performance
             output[dx_val + "_DiagnosisPresent"] = 0
-            output[dx_val + "_Certainty"] = None
+            output[dx_val + "_Qualifier"] = None
             dx_cols = [dx_val + var for var in repeated_vars]
             output[dx_cols] = None
             for i, n in itertools.product(range(0, len(data)), cls.DX_NS):
@@ -214,10 +215,11 @@ class Pivot:
         dx_values = cls._get_values(data, "subcategories")
         print("Diagnostic subcategories in dataset:")
         for dx_val in dx_values:
+            print(dx_val)
             output[dx_val + "_SubcategoryPresent"] = 0
             if include_details:
                 # column for diagnostic level details
-                output[dx_val + "_Details"] = ""
+                output[dx_val + "_Qualifier"] = ""
             for i in range(0, len(data)):
                 cat_details = []
                 for n in cls.DX_NS:
@@ -256,11 +258,12 @@ class Pivot:
         dx_values = cls._get_values(data, "categories")
         print("Diagnostic categories in dataset:")
         for dx_val in dx_values:
+            print(dx_val)
             # column for the presence of categories
             output[dx_val + "_CategoryPresent"] = 0
             if include_details:
                 # column for diagnostic level details
-                output[dx_val + "_Details"] = ""
+                output[dx_val + "_Qualifier"] = ""
             for i in range(0, len(data)):
                 cat_details = []
                 for n in cls.DX_NS:
