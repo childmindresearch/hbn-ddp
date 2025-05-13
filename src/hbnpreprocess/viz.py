@@ -1,11 +1,10 @@
 """Basic visualization of the HBN data."""
 
+import os
 from typing import Literal
 
 import pandas as pd
 import plotly.graph_objects as go
-
-from .utils import show
 
 
 def _bar(
@@ -61,7 +60,9 @@ def _bar(
         textposition="outside",
     )
 
-    show(fig)
+    fig.show()
+
+    _save_fig(fig, col_type)
 
 
 def _clean_label(label: str, col_type: str) -> str:
@@ -71,6 +72,16 @@ def _clean_label(label: str, col_type: str) -> str:
         .replace(" Disorders", "")
         .replace(" Disorder", "")
     )
+
+
+def _save_fig(fig: go.Figure, col_type: str) -> None:
+    """Save the figure to a file."""
+    try:
+        os.mkdir("./figures")
+    except FileExistsError:
+        pass
+    fig.write_image(f"figures/{col_type}_bar_plot.png")
+    print(f"Figure saved to figures/{col_type}_bar_plot.png.")
 
 
 def visualize(
