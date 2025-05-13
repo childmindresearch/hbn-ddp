@@ -23,6 +23,12 @@ class Interactive:
                 message="Please enter the path to the HBN data file.",
                 default="./data/",
             ).ask()
+        if not input_path.endswith(".csv"):
+            print("File must be a CSV.")
+            input_path = questionary.path(
+                message="Please enter the path to the HBN data file.",
+                default="./data/",
+            ).ask()
         output_path = questionary.path(
             message="Please enter the output path to save the processed data.",
             default=input_path.replace(".csv", "_processed.csv"),
@@ -58,8 +64,8 @@ class Interactive:
         """Prompts user for filtering."""
         print(
             "The HBN dataset includes diagnoses with varying qualifiers. These are "
-            "related to the time of diagnoses or the level of certainty. "
-            "These include:"
+            "related to the time of diagnoses or the level of certainty. \n"
+            "These include: "
             "confirmed, presumptive, requires confirmation (RC), rule out, by "
             "history (ByHx), past, and unknown."
         )

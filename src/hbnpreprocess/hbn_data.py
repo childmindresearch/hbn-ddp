@@ -56,5 +56,5 @@ class HBNData:
         output = Processor.pivot(data, by, qualifier_filter, include_details)
         if viz:
             visualize(output, by)
-        write(output, output_path=output_path, input_path=input_path)
+        write(output, input_path=input_path, by=by, output_path=output_path)
         return output
