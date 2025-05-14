@@ -3,9 +3,14 @@
 import itertools
 from dataclasses import dataclass
 from typing import Literal, Optional
+from warnings import simplefilter
 
 import numpy as np
 import pandas as pd
+
+# Ignore performance warnings from pandas
+# TODO: concatenate all new values at once for performance
+simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 
 
 @dataclass
@@ -183,7 +188,6 @@ class Pivot:
         print("Diagnoses in dataset:")
         for dx_val in dx_values:
             print(dx_val)
-            # TODO: Try concatenating all new values at once for performance
             output[dx_val + "_DiagnosisPresent"] = 0
             output[dx_val + "_Qualifier"] = None
             dx_cols = [dx_val + var for var in repeated_vars]
