@@ -52,7 +52,6 @@ class Pivot:
         data: pd.DataFrame,
         by: Literal["diagnoses", "subcategories", "categories"],
     ) -> list[str]:
-        # TODO: this can be cleaned up and simplified
         """Get the unique values to create columns for the pivot."""
         columns = (
             cls.DX_COLS
@@ -63,12 +62,7 @@ class Pivot:
             if by == "subcategories"
             else []
         )
-        return sorted(
-            (
-                set(map(cls._clean_dx_value, data[columns].values.flatten()))
-                - cls.INVALID_DX_VALS
-            )
-        )
+        return sorted((set(data[columns].values.flatten())) - cls.INVALID_DX_VALS)
 
     @staticmethod
     def _set_certainty(data: pd.DataFrame, i: int, col: str) -> str:
@@ -181,23 +175,24 @@ class Pivot:
         print("Diagnoses in dataset:")
         for dx_val in dx_values:
             print(dx_val)
-            output[dx_val + "_DiagnosisPresent"] = 0
-            output[dx_val + "_Certainty"] = None
-            dx_cols = [dx_val + var for var in repeated_vars]
+            col_name = cls._clean_dx_value(dx_val)
+            output[col_name + "_DiagnosisPresent"] = 0
+            output[col_name + "_Certainty"] = None
+            dx_cols = [col_name + var for var in repeated_vars]
             output[dx_cols] = None
             for i, n in itertools.product(range(0, len(data)), cls.DX_NS):
                 details = cls._get_diagnosis_details(data, i, n)
-                col = f"Diagnosis_ClinicianConsensus,DX_{n}"
+                dx_n_col = f"Diagnosis_ClinicianConsensus,DX_{n}"
                 # locate presence of specific diagnosis
-                if cls._clean_dx_value(details.diagnosis) == dx_val:
+                if details.diagnosis == dx_val:
                     # apply filter if selected and set presence of diagnosis
                     if cls._filter_pass(details.certainty, certainty_filter):
-                        output.at[i, f"{dx_val}_DiagnosisPresent"] = 1
+                        output.at[i, f"{col_name}_DiagnosisPresent"] = 1
                         # variables repeated by diagnosis
                         for var in repeated_vars:
-                            output.at[i, dx_val + var] = data.at[i, col + var]
+                            output.at[i, col_name + var] = data.at[i, dx_n_col + var]
                         # add certainty
-                        output.at[i, f"{dx_val}_Certainty"] = details.certainty
+                        output.at[i, f"{col_name}_Certainty"] = details.certainty
         return output
 
     @classmethod
@@ -213,19 +208,20 @@ class Pivot:
         print("Diagnostic subcategories in dataset:")
         for dx_val in dx_values:
             print(dx_val)
-            output[dx_val + "_SubcategoryPresent"] = 0
+            col_name = cls._clean_dx_value(dx_val)
+            output[col_name + "_SubcategoryPresent"] = 0
             if include_details:
                 # column for diagnostic level details
-                output[dx_val + "_Certainty"] = ""
+                output[col_name + "_Certainty"] = ""
             for i in range(0, len(data)):
                 cat_details = []
                 for n in cls.DX_NS:
                     details = cls._get_diagnosis_details(data, i, n)
-                    if cls._clean_dx_value(details.sub) == dx_val:
+                    if details.sub == dx_val:
                         # apply filter if selected
                         if cls._filter_pass(details.certainty, certainty_filter):
                             # set presence of subcategory
-                            output.at[i, dx_val + "_SubcategoryPresent"] = 1
+                            output.at[i, col_name + "_SubcategoryPresent"] = 1
                             # create dictionary to store details on a diagnostic level
                             cat_dict = {
                                 "diagnosis": details.diagnosis,
@@ -240,7 +236,7 @@ class Pivot:
                             cat_details.append(cat_dict)
                 # add subcategory details to row
                 if include_details and len(cat_details) > 0:
-                    output.at[i, dx_val + "_Details"] = str(cat_details).strip("[]")
+                    output.at[i, col_name + "_Details"] = str(cat_details).strip("[]")
         return output
 
     @classmethod
@@ -256,20 +252,21 @@ class Pivot:
         print("Diagnostic categories in dataset:")
         for dx_val in dx_values:
             print(dx_val)
-            # column for the presence of categories
-            output[dx_val + "_CategoryPresent"] = 0
+            col_name = cls._clean_dx_value(dx_val)
+            # column for the presence of diagnostic categories
+            output[col_name + "_CategoryPresent"] = 0
             if include_details:
                 # column for diagnostic level details
-                output[dx_val + "_Certainty"] = ""
+                output[col_name + "_Certainty"] = ""
             for i in range(0, len(data)):
                 cat_details = []
                 for n in cls.DX_NS:
                     details = cls._get_diagnosis_details(data, i, n)
-                    if cls._clean_dx_value(details.cat) == dx_val:
+                    if details.cat == dx_val:
                         # apply filter if selected
                         if cls._filter_pass(details.certainty, certainty_filter):
                             # set presence of category
-                            output.at[i, dx_val + "_CategoryPresent"] = 1
+                            output.at[i, col_name + "_CategoryPresent"] = 1
                             # create dictionary to store details on a diagnostic level
                             cat_dict = {
                                 "diagnosis": details.diagnosis,
@@ -285,6 +282,6 @@ class Pivot:
                             cat_details.append(cat_dict)
                 # add category details to row
                 if include_details and len(cat_details) > 0:
-                    output.at[i, dx_val + "_Details"] = str(cat_details).strip("[]")
+                    output.at[i, col_name + "_Details"] = str(cat_details).strip("[]")
 
         return output

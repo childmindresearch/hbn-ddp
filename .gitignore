@@ -2,6 +2,8 @@
 data/
 local/
 dist/
+figures/
+.figures/
 
 # MacOS
 .DS_Store
