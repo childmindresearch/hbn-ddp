@@ -22,8 +22,8 @@ class DxInfo:
     cat: str
     code: str
     past_doc: str
-    qual: str
-    time: int
+    certainty: str
+    time: str
 
 
 class Pivot:
@@ -71,14 +71,12 @@ class Pivot:
         )
 
     @staticmethod
-    def _set_qualifier(data: pd.DataFrame, i: int, col: str) -> str:
-        """Get the qualifier for a diagnosis."""
+    def _set_certainty(data: pd.DataFrame, i: int, col: str) -> str:
+        """Get the certainty for a diagnosis."""
         # TODO: Consider using an enum for the certainty levels.
         # TODO: Rather than indexing into df every time, I think this would be clearer
         # if each of the conditions were assigned to variables that can be used in the
         # logic.
-        # TODO: Another potential simplification would be to check sum(bool_values) == 1
-        # to ensure only one of the conditions is met.
 
         byhx = all(
             [
@@ -87,7 +85,6 @@ class Pivot:
                 data.at[i, col + "_RC"] != 1,
                 data.at[i, col + "_RuleOut"] != 1,
                 data.at[i, col + "_ByHx"] == 1,
-                data.at[i, col + "_Time"] == 1,
             ]
         )
         confirmed = all(
@@ -97,7 +94,6 @@ class Pivot:
                 data.at[i, col + "_RC"] != 1,
                 data.at[i, col + "_RuleOut"] != 1,
                 data.at[i, col + "_ByHx"] != 1,
-                data.at[i, col + "_Time"] == 1,
             ]
         )
         presum = all(
@@ -107,7 +103,6 @@ class Pivot:
                 data.at[i, col + "_RC"] != 1,
                 data.at[i, col + "_RuleOut"] != 1,
                 data.at[i, col + "_ByHx"] != 1,
-                data.at[i, col + "_Time"] == 1,
             ]
         )
         rc = all(
@@ -117,7 +112,6 @@ class Pivot:
                 data.at[i, col + "_RC"] == 1,
                 data.at[i, col + "_RuleOut"] != 1,
                 data.at[i, col + "_ByHx"] != 1,
-                data.at[i, col + "_Time"] == 1,
             ]
         )
         ruleout = all(
@@ -127,35 +121,34 @@ class Pivot:
                 data.at[i, col + "_RC"] != 1,
                 data.at[i, col + "_RuleOut"] == 1,
                 data.at[i, col + "_ByHx"] != 1,
-                data.at[i, col + "_Time"] == 1,
-            ]
-        )
-        past = all(
-            [
-                data.at[i, col + "_Confirmed"] != 1,
-                data.at[i, col + "_Presum"] != 1,
-                data.at[i, col + "_RC"] != 1,
-                data.at[i, col + "_RuleOut"] != 1,
-                data.at[i, col + "_ByHx"] != 1,
-                data.at[i, col + "_Time"] == 2,
             ]
         )
         if byhx:
-            qual = "ByHx"
+            certainty = "ByHx"
         elif confirmed:
-            qual = "Confirmed"
+            certainty = "Confirmed"
         elif presum:
-            qual = "Presumptive"
+            certainty = "Presumptive"
         elif rc:
-            qual = "RC"
+            certainty = "RC"
         elif ruleout:
-            qual = "RuleOut"
-        elif past:
-            qual = "Past"
-        # if all missing, or conflicting certainties are present, assign 'Unknown'
+            certainty = "RuleOut"
         else:
-            qual = "Unknown"
-        return qual
+            certainty = "Unknown"
+        return certainty
+
+    @staticmethod
+    def _set_time(data: pd.DataFrame, i: int, col: str) -> str:
+        """Get the time for a diagnosis."""
+        past = data.at[i, col + "_Time"] == 2
+        present = data.at[i, col + "_Time"] == 1
+        if past:
+            time = "Past"
+        elif present:
+            time = "Present"
+        else:
+            time = "Unknown"
+        return time
 
     @classmethod
     def _get_diagnosis_details(cls, data: pd.DataFrame, i: int, n: str) -> DxInfo:
@@ -166,21 +159,21 @@ class Pivot:
             cat=data.at[i, col + "_Cat"],
             code=data.at[i, col + "_Code"],
             past_doc=data.at[i, col + "_Past_Doc"],
-            qual=cls._set_qualifier(data, i, col),
-            time=data.at[i, col + "_Time"],
+            certainty=cls._set_certainty(data, i, col),
+            time=cls._set_time(data, i, col),
         )
 
     @classmethod
-    def _filter_pass(cls, qual: str, qualifier_filter: list[str] | None) -> bool:
+    def _filter_pass(cls, certainty: str, certainty_filter: list[str] | None) -> bool:
         """Apply the filter."""
-        return qualifier_filter is None or qual in qualifier_filter
+        return certainty_filter is None or certainty in certainty_filter
 
     @classmethod
     def diagnoses(
         cls,
         data: pd.DataFrame,
         output: pd.DataFrame,
-        qualifier_filter: Optional[list[str]] = None,
+        certainty_filter: Optional[list[str]] = None,
     ) -> pd.DataFrame:
         """Pivot the data by diagnoses."""
         repeated_vars = ["_Cat", "_Sub", "_Spec", "_Code", "_Past_Doc"]
@@ -189,7 +182,7 @@ class Pivot:
         for dx_val in dx_values:
             print(dx_val)
             output[dx_val + "_DiagnosisPresent"] = 0
-            output[dx_val + "_Qualifier"] = None
+            output[dx_val + "_Certainty"] = None
             dx_cols = [dx_val + var for var in repeated_vars]
             output[dx_cols] = None
             for i, n in itertools.product(range(0, len(data)), cls.DX_NS):
@@ -198,13 +191,13 @@ class Pivot:
                 # locate presence of specific diagnosis
                 if cls._clean_dx_value(details.diagnosis) == dx_val:
                     # apply filter if selected and set presence of diagnosis
-                    if cls._filter_pass(details.qual, qualifier_filter):
+                    if cls._filter_pass(details.certainty, certainty_filter):
                         output.at[i, f"{dx_val}_DiagnosisPresent"] = 1
                         # variables repeated by diagnosis
                         for var in repeated_vars:
                             output.at[i, dx_val + var] = data.at[i, col + var]
-                        # add qualifier
-                        output.at[i, f"{dx_val}_Qualifier"] = details.qual
+                        # add certainty
+                        output.at[i, f"{dx_val}_Certainty"] = details.certainty
         return output
 
     @classmethod
@@ -212,7 +205,7 @@ class Pivot:
         cls,
         data: pd.DataFrame,
         output: pd.DataFrame,
-        qualifier_filter: Optional[list[str]] = None,
+        certainty_filter: Optional[list[str]] = None,
         include_details: bool = False,
     ) -> pd.DataFrame:
         """Pivot the dataset on diagnostic subcategories."""
@@ -223,21 +216,21 @@ class Pivot:
             output[dx_val + "_SubcategoryPresent"] = 0
             if include_details:
                 # column for diagnostic level details
-                output[dx_val + "_Qualifier"] = ""
+                output[dx_val + "_Certainty"] = ""
             for i in range(0, len(data)):
                 cat_details = []
                 for n in cls.DX_NS:
                     details = cls._get_diagnosis_details(data, i, n)
                     if cls._clean_dx_value(details.sub) == dx_val:
                         # apply filter if selected
-                        if cls._filter_pass(details.qual, qualifier_filter):
+                        if cls._filter_pass(details.certainty, certainty_filter):
                             # set presence of subcategory
                             output.at[i, dx_val + "_SubcategoryPresent"] = 1
                             # create dictionary to store details on a diagnostic level
                             cat_dict = {
                                 "diagnosis": details.diagnosis,
                                 "code": details.code,
-                                "qualifier": details.qual,
+                                "certainty": details.certainty,
                                 "time": details.time,
                                 "past_documentation": ""
                                 if details.past_doc is None
@@ -255,7 +248,7 @@ class Pivot:
         cls,
         data: pd.DataFrame,
         output: pd.DataFrame,
-        qualifier_filter: list[str] | None = None,
+        certainty_filter: list[str] | None = None,
         include_details: bool = False,
     ) -> pd.DataFrame:
         """Pivot the dataset on diagnostic categories."""
@@ -267,14 +260,14 @@ class Pivot:
             output[dx_val + "_CategoryPresent"] = 0
             if include_details:
                 # column for diagnostic level details
-                output[dx_val + "_Qualifier"] = ""
+                output[dx_val + "_Certainty"] = ""
             for i in range(0, len(data)):
                 cat_details = []
                 for n in cls.DX_NS:
                     details = cls._get_diagnosis_details(data, i, n)
                     if cls._clean_dx_value(details.cat) == dx_val:
                         # apply filter if selected
-                        if cls._filter_pass(details.qual, qualifier_filter):
+                        if cls._filter_pass(details.certainty, certainty_filter):
                             # set presence of category
                             output.at[i, dx_val + "_CategoryPresent"] = 1
                             # create dictionary to store details on a diagnostic level
@@ -282,7 +275,7 @@ class Pivot:
                                 "diagnosis": details.diagnosis,
                                 "subcategory": details.sub,
                                 "code": details.code,
-                                "qualifier": details,
+                                "certainty": details,
                                 "time": details.time,
                                 "past_documentation": ""
                                 if details.past_doc is None

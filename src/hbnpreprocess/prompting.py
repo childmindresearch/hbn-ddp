@@ -4,7 +4,7 @@ from pathlib import Path
 
 import questionary
 
-qualifiers = ["Confirmed", "Presumptive", "RC", "RuleOut", "ByHx", "Past", "Unknown"]
+certainties = ["Confirmed", "Presumptive", "RC", "RuleOut", "ByHx", "Past", "Unknown"]
 
 
 class Interactive:
@@ -63,17 +63,20 @@ class Interactive:
     def _data_filter(**kwargs: object) -> dict:
         """Prompts user for filtering."""
         print(
-            "The HBN dataset includes diagnoses with varying qualifiers. These are "
-            "related to the time of diagnoses or the level of certainty. \n"
-            "These include: "
-            "confirmed, presumptive, requires confirmation (RC), rule out, by "
-            "history (ByHx), past, and unknown."
+            "The HBN dataset includes diagnoses with varying levels of diagnostic "
+            "certainty. If a clinician was not able to confirm a diagnosis, "
+            "but symptoms were endorsed, they may refer families to follow up or seek "
+            "further testing. \n"
+            "Possible diagnostic certainties in the dataset include: "
+            "confirmed, presumptive, requires confirmation (RC), rule out, and by "
+            "history (ByHx). \n"
+            "The dataset also indicates the time course of diagnoses - past or present."
         )
         url = "https://fcon_1000.projects.nitrc.org/indi/cmi_healthy_brain_network/Phenotypic.html#Diagnosis"
         text = "HBN Diagnostic Process"
         hyperlink = f"\x1b]8;;{url}\x1b\\{text}\x1b]8;;\x1b\\"
         questionary.print(
-            "To learn more about diagnostic qualifiers and the HBN "
+            "To learn more about diagnostic certainties and the HBN "
             "dataset as a whole, click here:",
             style="fg:orange bold",
         )
@@ -83,15 +86,15 @@ class Interactive:
             {
                 "type": "confirm",
                 "name": "apply_filter",
-                "message": "Filter the data by diagnostic qualifier?",
+                "message": "Filter the data by diagnostic certainty?",
                 "default": True,
             },
             {
                 "type": "checkbox",
-                "name": "qualifier_filter",
+                "name": "certainty_filter",
                 "message": "Please select which diagnoses should be included in the "
-                "dataset based on their qualifiers.",
-                "choices": qualifiers,
+                "dataset based on their certainties.",
+                "choices": certainties,
                 "when": lambda x: x["apply_filter"],
                 "validate": lambda a: (
                     True if len(a) > 0 else "You must select at least one option."
@@ -132,10 +135,10 @@ class Interactive:
     def _get_filter_args(resp: dict) -> list | None:
         """Returns parameters to use in pivot function."""
         if resp["apply_filter"]:
-            qualifier_filter = resp["qualifier_filter"]
+            certainty_filter = resp["certainty_filter"]
         else:
-            qualifier_filter = None
-        return qualifier_filter
+            certainty_filter = None
+        return certainty_filter
 
     @staticmethod
     def prompt() -> dict:
@@ -146,13 +149,13 @@ class Interactive:
             include_details = Interactive._include_details()
         else:
             include_details = False
-        qualifier_filter = Interactive._get_filter_args(Interactive._data_filter())
+        certainty_filter = Interactive._get_filter_args(Interactive._data_filter())
         viz = Interactive._visualize()
         return {
             "input_path": input_path,
             "output_path": output_path,
             "by": by,
-            "qualifier_filter": qualifier_filter,
+            "certainty_filter": certainty_filter,
             "include_details": include_details,
             "viz": viz,
         }
