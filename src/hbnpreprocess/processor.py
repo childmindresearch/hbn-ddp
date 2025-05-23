@@ -64,29 +64,29 @@ class Processor:
             "categories",
             "all",
         ] = "all",
-        qualifier_filter: list[str] | None = None,
+        certainty_filter: list[str] | None = None,
         include_details: bool = False,
     ) -> pd.DataFrame:
         """Pivot and filter the data."""
         output = Processor._copy_static_columns(data)
         match by:
             case "diagnoses":
-                output = Pivot.diagnoses(data, output, qualifier_filter)
+                output = Pivot.diagnoses(data, output, certainty_filter)
             case "subcategories":
                 output = Pivot.subcategories(
-                    data, output, qualifier_filter, include_details
+                    data, output, certainty_filter, include_details
                 )
             case "categories":
                 output = Pivot.categories(
-                    data, output, qualifier_filter, include_details
+                    data, output, certainty_filter, include_details
                 )
             case "all":
-                output = Pivot.diagnoses(data, output, qualifier_filter)
+                output = Pivot.diagnoses(data, output, certainty_filter)
                 output = Pivot.subcategories(
-                    data, output, qualifier_filter, include_details
+                    data, output, certainty_filter, include_details
                 )
                 output = Pivot.categories(
-                    data, output, qualifier_filter, include_details
+                    data, output, certainty_filter, include_details
                 )
             case _:
                 raise ValueError(f"Invalid value for 'by': {by}")
