@@ -136,7 +136,7 @@ class Pivot:
         else:
             certainty = "Unknown"
         return certainty
-    
+
     @staticmethod
     def _set_time(data: pd.DataFrame, i: int, col: str) -> str:
         """Get the time for a diagnosis."""

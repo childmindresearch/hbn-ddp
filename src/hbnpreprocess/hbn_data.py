@@ -47,7 +47,7 @@ class HBNData:
             Default is None, which will include all.
             include_details: When pivoting by category or subcategory, whether to
             include diagnosis level details in a separate column as a dictionary.
-            viz: Whether to visualize the data. Displays and saves a bar plot showing 
+            viz: Whether to visualize the data. Displays and saves a bar plot showing
             the incidence of diagnoses or categories.
 
         Returns:
