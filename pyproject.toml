@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "hbn-preprocess"
+name = "hbn-ddp"
 version = "0.1.0"
 description = "A repo for cleaning and pivoting the hbh clinician consensus data for analysis."
 authors = ["maya-roberts <maya36247@gmail.com>"]
