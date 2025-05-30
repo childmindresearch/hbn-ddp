@@ -67,13 +67,14 @@ class Interactive:
         """Prompts user for filtering."""
         print(
             "The HBN dataset includes diagnoses with varying levels of diagnostic "
-            "certainty. If a clinician was not able to confirm a diagnosis, "
+            "certainty. \n If a clinician was not able to confirm a diagnosis, "
             "but symptoms were endorsed, they may refer families to follow up or seek "
-            "further testing. \n"
+            "further testing. \n\n"
             "Possible diagnostic certainties in the dataset include: "
             "confirmed, presumptive, requires confirmation (RC), rule out, and by "
-            "history (ByHx). \n"
+            "history (ByHx). \n\n"
             "The dataset also indicates the time course of diagnoses - past or present."
+            "\n \n"
         )
         url = "https://fcon_1000.projects.nitrc.org/indi/cmi_healthy_brain_network/Phenotypic.html#Diagnosis"
         text = "HBN Diagnostic Process"
