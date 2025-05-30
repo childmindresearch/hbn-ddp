@@ -62,7 +62,11 @@ class Pivot:
             if by == "subcategories"
             else []
         )
-        return sorted((set(data[columns].values.flatten())) - cls.INVALID_DX_VALS)
+
+        values = {
+            x for x in set(data[columns].values.flatten()) if pd.notna(x)
+        } - cls.INVALID_DX_VALS
+        return list(values)
 
     @staticmethod
     def _set_certainty(data: pd.DataFrame, i: int, col: str) -> str:
