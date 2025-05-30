@@ -26,7 +26,7 @@ class Processor:
 
     @staticmethod
     def _preprocess_categories(data: pd.DataFrame) -> pd.DataFrame:
-        """Preprocess the categories."""
+        """Preprocess the categories by filling missing subcategories."""
         cat_sub_cols = [
             (
                 f"Diagnosis_ClinicianConsensus,DX_{n:02d}_Cat",
