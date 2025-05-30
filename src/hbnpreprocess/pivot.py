@@ -68,55 +68,19 @@ class Pivot:
     def _set_certainty(data: pd.DataFrame, i: int, col: str) -> str:
         """Get the certainty for a diagnosis."""
         # TODO: Consider using an enum for the certainty levels.
-        # TODO: Rather than indexing into df every time, I think this would be clearer
-        # if each of the conditions were assigned to variables that can be used in the
-        # logic.
 
-        byhx = all(
-            [
-                data.at[i, col + "_Confirmed"] != 1,
-                data.at[i, col + "_Presum"] != 1,
-                data.at[i, col + "_RC"] != 1,
-                data.at[i, col + "_RuleOut"] != 1,
-                data.at[i, col + "_ByHx"] == 1,
-            ]
-        )
-        confirmed = all(
-            [
-                data.at[i, col + "_Confirmed"] == 1,
-                data.at[i, col + "_Presum"] != 1,
-                data.at[i, col + "_RC"] != 1,
-                data.at[i, col + "_RuleOut"] != 1,
-                data.at[i, col + "_ByHx"] != 1,
-            ]
-        )
-        presum = all(
-            [
-                data.at[i, col + "_Confirmed"] != 1,
-                data.at[i, col + "_Presum"] == 1,
-                data.at[i, col + "_RC"] != 1,
-                data.at[i, col + "_RuleOut"] != 1,
-                data.at[i, col + "_ByHx"] != 1,
-            ]
-        )
-        rc = all(
-            [
-                data.at[i, col + "_Confirmed"] != 1,
-                data.at[i, col + "_Presum"] != 1,
-                data.at[i, col + "_RC"] == 1,
-                data.at[i, col + "_RuleOut"] != 1,
-                data.at[i, col + "_ByHx"] != 1,
-            ]
-        )
-        ruleout = all(
-            [
-                data.at[i, col + "_Confirmed"] != 1,
-                data.at[i, col + "_Presum"] != 1,
-                data.at[i, col + "_RC"] != 1,
-                data.at[i, col + "_RuleOut"] == 1,
-                data.at[i, col + "_ByHx"] != 1,
-            ]
-        )
+        is_confirmed = data.at[i, col + "_Confirmed"] == 1
+        is_presum = data.at[i, col + "_Presum"] == 1
+        is_rc = data.at[i, col + "_RC"] == 1
+        is_ruleout = data.at[i, col + "_RuleOut"] == 1
+        is_byhx = data.at[i, col + "_ByHx"] == 1
+
+        confirmed = is_confirmed and not any([is_presum, is_rc, is_ruleout, is_byhx])
+        presum = is_presum and not any([is_confirmed, is_rc, is_ruleout, is_byhx])
+        rc = is_rc and not any([is_confirmed, is_presum, is_ruleout, is_byhx])
+        ruleout = is_ruleout and not any([is_confirmed, is_presum, is_rc, is_byhx])
+        byhx = is_byhx and not any([is_confirmed, is_presum, is_rc, is_ruleout])
+
         if byhx:
             certainty = "ByHx"
         elif confirmed:
@@ -272,7 +236,7 @@ class Pivot:
                                 "diagnosis": details.diagnosis,
                                 "subcategory": details.sub,
                                 "code": details.code,
-                                "certainty": details,
+                                "certainty": details.certainty,
                                 "time": details.time,
                                 "past_documentation": ""
                                 if details.past_doc is None
