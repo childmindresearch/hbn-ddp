@@ -60,8 +60,6 @@ def _bar(
         textposition="outside",
     )
 
-    fig.show()
-
     _save_fig(fig, col_type)
 
 
@@ -80,6 +78,7 @@ def _save_fig(fig: go.Figure, col_type: str) -> None:
         os.mkdir("./figures")
     except FileExistsError:
         pass
+    col_type = col_type.replace("Present", "").lower()
     fig.write_image(f"figures/{col_type}_bar_plot.png")
     print(f"Figure saved to figures/{col_type}_bar_plot.png.")
 

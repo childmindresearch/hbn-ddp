@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from hbnpreprocess.processor import Processor
+from hbnddp.processor import Processor
 
 
 def _gen_col(prefix: str, i: int) -> list[str | None]:

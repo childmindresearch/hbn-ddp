@@ -2,8 +2,8 @@
 
 import typer
 
-from hbnpreprocess.hbn_data import HBNData
-from hbnpreprocess.prompting import Interactive
+from hbnddp.hbn_ddp import HBNData
+from hbnddp.prompting import Interactive
 
 app = typer.Typer(
     help="CLI for preprocessing HBN diagnostic data.",

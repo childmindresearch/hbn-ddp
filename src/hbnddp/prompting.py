@@ -23,7 +23,7 @@ class Interactive:
                 message="Please enter the path to the HBN data file.",
                 default="./data/",
             ).ask()
-        if not input_path.endswith(".csv"):
+        while not input_path.endswith(".csv"):
             print("File must be a CSV.")
             input_path = questionary.path(
                 message="Please enter the path to the HBN data file.",
