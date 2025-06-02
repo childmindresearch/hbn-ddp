@@ -1,6 +1,6 @@
 """Tests for pivot functions."""
 
-from hbnpreprocess.processor import Processor
+from hbnddp.processor import Processor
 
 
 def test_load() -> None:
