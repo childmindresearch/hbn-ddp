@@ -66,7 +66,7 @@ class Pivot:
         values = {
             x for x in set(data[columns].values.flatten()) if pd.notna(x)
         } - cls.INVALID_DX_VALS
-        return list(values)
+        return sorted(list(values))
 
     @staticmethod
     def _set_certainty(data: pd.DataFrame, i: int, col: str) -> str:
