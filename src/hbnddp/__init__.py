@@ -1,5 +1,5 @@
 """Module exports."""
 
-from .hbn_data import HBNData
+from .hbn_ddp import HBNData
 
 __all__ = ["HBNData"]

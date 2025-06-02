@@ -1,11 +1,11 @@
 [tool.poetry]
 name = "hbn-ddp"
 version = "0.1.0"
-description = "A repo for cleaning and pivoting the hbh clinician consensus data for analysis."
+description = "A repo for reformatting the hbn clinician consensus diagnostic data for analysis."
 authors = ["maya-roberts <maya36247@gmail.com>"]
 license = ""
 readme = "README.md"
-packages = [{include = "hbnpreprocess", from = "src"}]
+packages = [{include = "hbnddp", from = "src"}]
 
 [tool.poetry.dependencies]
 # Consider changing to >=3.11 python version
@@ -31,7 +31,7 @@ ipykernel = "^6.29.5"
 pdoc = "^15.0.0"
 
 [tool.poetry.scripts]
-hbnpreprocess = "hbnpreprocess.__main__:app"
+hbnddp = "hbnddp.__main__:app"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
