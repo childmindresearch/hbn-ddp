@@ -41,8 +41,8 @@ hbnddp
 
 ## Quick start
 ```sh
-from hbnpreprocess.hbn_data import HBNData
-HBNData.process()
+from hbnddp import hbn_ddp
+hbn_ddp.HBNData.process()
 ```
 [Notebook Example](https://github.com/childmindresearch/hbn-preprocess/blob/main/examples/pivot_example.ipynb)
 
