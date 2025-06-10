@@ -12,6 +12,11 @@ import pandas as pd
 # TODO: concatenate all new values at once for performance
 simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 
+TIME_COURSE_DXES = [
+    "Major Depressive Disorder",
+    "Persistent Depressive Disorder (Dysthymia)",
+]
+
 
 @dataclass
 class DxInfo:
@@ -115,7 +120,7 @@ class Pivot:
     @classmethod
     def _get_diagnosis_details(cls, data: pd.DataFrame, i: int, n: str) -> DxInfo:
         col = f"Diagnosis_ClinicianConsensus,DX_{n}"
-        return DxInfo(
+        details = DxInfo(
             diagnosis=data.at[i, col],
             sub=data.at[i, col + "_Sub"],
             cat=data.at[i, col + "_Cat"],
@@ -124,6 +129,9 @@ class Pivot:
             certainty=cls._set_certainty(data, i, col),
             time=cls._set_time(data, i, col),
         )
+        if details.diagnosis in TIME_COURSE_DXES:
+            details.time = "Specific Time Course"
+        return details
 
     @classmethod
     def _filter_pass(cls, certainty: str, certainty_filter: list[str] | None) -> bool:
@@ -146,6 +154,7 @@ class Pivot:
             col_name = cls._clean_dx_value(dx_val)
             output[col_name + "_DiagnosisPresent"] = 0
             output[col_name + "_Certainty"] = None
+            output[col_name + "_Time"] = None
             dx_cols = [col_name + var for var in repeated_vars]
             output[dx_cols] = None
             for i, n in itertools.product(range(0, len(data)), cls.DX_NS):
@@ -161,6 +170,8 @@ class Pivot:
                             output.at[i, col_name + var] = data.at[i, dx_n_col + var]
                         # add certainty
                         output.at[i, f"{col_name}_Certainty"] = details.certainty
+                        # add time
+                        output.at[i, f"{col_name}_Time"] = details.time
         return output
 
     @classmethod
