@@ -4,6 +4,7 @@ local/
 dist/
 figures/
 .figures/
+examples/figures/
 
 # MacOS
 .DS_Store

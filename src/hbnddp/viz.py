@@ -74,13 +74,12 @@ def _clean_label(label: str, col_type: str) -> str:
 
 def _save_fig(fig: go.Figure, col_type: str) -> None:
     """Save the figure to a file."""
-    try:
-        os.mkdir("./figures")
-    except FileExistsError:
-        pass
+    figures_dir = os.path.join(".", "figures")
+    os.makedirs(figures_dir, exist_ok=True)
     col_type = col_type.replace("Present", "").lower()
-    fig.write_image(f"figures/{col_type}_bar_plot.png")
-    print(f"Figure saved to figures/{col_type}_bar_plot.png.")
+    file_path = os.path.join(figures_dir, f"{col_type}_bar_plot.png")
+    fig.write_image(file_path)
+    print(f"Figure saved to {file_path}.")
 
 
 def visualize(
