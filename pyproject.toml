@@ -29,7 +29,7 @@ dev = [
   "pytest-cov>=6.0.0,<7",
   "ruff>=0.8.1,<0.9"
 ]
-docs = ["pdoc>=15.0.0,<16"]
+docs = ["pdoc>=15.0.0,<17"]
 
 [tool.uv]
 default-groups = [
