@@ -4,7 +4,7 @@
 A Python preprocessing package for working with the Healthy Brain Network clinician consensus diagnostic data.
 
 [![Build](https://github.com/childmindresearch/hbn-ddp/actions/workflows/test.yaml/badge.svg?branch=main)](https://github.com/childmindresearch/hbn-ddp/actions/workflows/test.yaml?query=branch%3Amain)
-[![codecov](https://codecov.io/gh/childmindresearch/hbn-ddp/branch/main/graph/badge.svg?token=22HWWFWPW5)](https://codecov.io/gh/childmindresearch/hbn-ddp)
+[![codecov](https://codecov.io/gh/childmindresearch/hbn-ddp/branch/main/graph/badge.svg?token=721bbea6-7f0a-4f6b-a6e5-33f4dee8c3b4)](https://codecov.io/gh/childmindresearch/hbn-ddp)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 ![stability-stable](https://img.shields.io/badge/stability-stable-green.svg)
 [![pages](https://img.shields.io/badge/api-docs-blue)](https://childmindresearch.github.io/hbn-ddp)
