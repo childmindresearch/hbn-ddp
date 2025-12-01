@@ -15,7 +15,7 @@ The raw HBN dataset includes final clinician diagnostic data given across ten nu
 | DX_01 | DX_01_Cat | DX_01_Sub | DX_01_Time | DX_01_Confirmed | DX_01_Presum | DX_01_RC | DX_01_RuleOut | DX_02 | DX_02_Cat | DX_02_Sub | DX_02_Time | DX_02_Confirmed | DX_02_Presum | DX_02_RC | DX_02_RuleOut | ... |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | ADHD - Hyperactive Type | Neurodevelopmental Disorders | ADHD | 1 | 1 | 0 | 0 | 0 | | | | | | | | | ... |
-| Selective Mutism | Axiety Disorders | Axiety Disorders | 1 | 1 | 0 | 0 | 0 | Autism Spectrum Disorder | Autism Spectrum Disorder | Neurodevelopmental Disorders | 1 | 0 | 0 | 0 | 1 | ... |
+| Selective Mutism | Anxiety Disorders | Anxiety Disorders | 1 | 1 | 0 | 0 | 0 | Autism Spectrum Disorder | Autism Spectrum Disorder | Neurodevelopmental Disorders | 1 | 0 | 0 | 0 | 1 | ... |
 
 <p align="center">↓</p>
 
