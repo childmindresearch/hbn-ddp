@@ -25,6 +25,7 @@ expected_diagnoses = [
     and d not in {"No Diagnosis Given", "No Diagnosis Given: Incomplete Eval", "", " "}
 ]
 
+
 def test_clean_dx_value() -> None:
     """Test cleaning diagnosis value."""
     assert (

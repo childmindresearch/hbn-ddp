@@ -3,7 +3,7 @@
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 import numpy as np
 import pandas as pd
@@ -171,7 +171,7 @@ class Pivot:
         print("Diagnoses in dataset:")
 
         # Dictionary to collect all new columns
-        all_new_cols = {}
+        all_new_cols: dict[str, Any] = {}
 
         for dx_val in dx_values:
             print(dx_val)
@@ -179,9 +179,11 @@ class Pivot:
 
             # Collect all updates for this diagnosis
             present_data = [0] * len(data)
-            certainty_data = [None] * len(data)
-            time_data = [None] * len(data)
-            repeated_data = {var: [None] * len(data) for var in repeated_vars}
+            certainty_data: list[str | None] = [None] * len(data)
+            time_data: list[str | None] = [None] * len(data)
+            repeated_data: dict[str, list[str | int | None]] = {
+                var: [None] * len(data) for var in repeated_vars
+            }
 
             for i in range(len(data)):
                 for n in cls.DX_NS:
@@ -245,7 +247,7 @@ class Pivot:
         print("Diagnostic subcategories in dataset:")
 
         # Dictionary to collect all new columns
-        all_new_cols = {}
+        all_new_cols: dict[str, Any] = {}
 
         for dx_val in dx_values:
             print(dx_val)
@@ -253,7 +255,7 @@ class Pivot:
 
             # Collect all updates for this subcategory
             present_data = [0] * len(data)
-            details_data = [""] * len(data) if include_details else None
+            details_data: list[str] = [""] * len(data) if include_details else []
 
             for i in range(len(data)):
                 cat_details = []
@@ -315,7 +317,7 @@ class Pivot:
         print("Diagnostic categories in dataset:")
 
         # Dictionary to collect all new columns
-        all_new_cols = {}
+        all_new_cols: dict[str, Any] = {}
 
         for dx_val in dx_values:
             print(dx_val)
@@ -323,7 +325,7 @@ class Pivot:
 
             # Collect all updates for this category
             present_data = [0] * len(data)
-            details_data = [""] * len(data) if include_details else None
+            details_data: list[str] = [""] * len(data) if include_details else []
 
             for i in range(len(data)):
                 cat_details = []

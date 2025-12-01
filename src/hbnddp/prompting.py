@@ -1,6 +1,7 @@
 """Prompts user for interactive data filtering."""
 
 from pathlib import Path
+from typing import Any
 
 import questionary
 
@@ -63,7 +64,7 @@ class Interactive:
         return questionary.prompt(questions)["pivot_by"]
 
     @staticmethod
-    def _data_filter(**kwargs: object) -> dict:
+    def _data_filter(**kwargs: Any) -> dict:  # noqa: ANN401
         """Prompts user for filtering."""
         print(
             "The HBN dataset includes diagnoses with varying levels of diagnostic "
