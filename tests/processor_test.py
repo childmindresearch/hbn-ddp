@@ -35,10 +35,12 @@ def test_data_path() -> Path:
         pytest.skip(f"Test data not found: {path}")
     return path
 
+
 def test_load() -> None:
     """Test load function."""
     data = Processor.load("tests/test_data.csv")
     assert data is not None
+
 
 def test_category_preprocessor(categories_df: pd.DataFrame) -> None:
     """Test the category processor."""
@@ -52,6 +54,7 @@ def test_category_preprocessor(categories_df: pd.DataFrame) -> None:
     assert result.iloc[1, 1] == "Cat_01_02"
     assert result.iloc[2, 3] == categories_df.iloc[2, 2]
     assert result.iloc[2, 3] == "Cat_02_03"
+
 
 def test_copy_static_columns() -> None:
     """Test the copy static columns function."""
@@ -79,6 +82,7 @@ def test_copy_static_columns() -> None:
     # Check that static columns have correct values
     assert result[static_cols].equals(df[static_cols])
 
+
 def test_pivot() -> None:
     """Test pivot function."""
     data = Processor.load("tests/test_data.csv")
@@ -86,4 +90,3 @@ def test_pivot() -> None:
     assert output is not None
     assert output is not data
     assert len(output) == len(data)
-

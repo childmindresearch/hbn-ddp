@@ -11,10 +11,12 @@ import pandas as pd
 TIME_COURSE_DXES = [
     "Major Depressive Disorder",
     "Persistent Depressive Disorder (Dysthymia)",
-    ]
+]
+
 
 class CertaintyLevel(Enum):
     """Enum for certainty levels."""
+
     BY_HX = "ByHx"
     CONFIRMED = "Confirmed"
     PRESUMPTIVE = "Presumptive"
@@ -22,11 +24,13 @@ class CertaintyLevel(Enum):
     RULE_OUT = "RuleOut"
     UNKNOWN = "Unknown"
 
+
 class TimeCode(Enum):
     """Enum for time codes."""
+
     PRESENT = 1
     PAST = 2
-    
+
 
 @dataclass
 class DxInfo:
@@ -60,9 +64,9 @@ class Pivot:
     @classmethod
     def _clean_dx_value(cls, value: str) -> str:
         """Clean diagnosis value to use as column name."""
-        cleaned = re.sub(r'[^\w\s/-]', '', str(value).strip())
-        cleaned = cleaned.replace('/', '_').replace('-', '_')
-        return cleaned.replace(' ', '_')
+        cleaned = re.sub(r"[^\w\s/-]", "", str(value).strip())
+        cleaned = cleaned.replace("/", "_").replace("-", "_")
+        return cleaned.replace(" ", "_")
 
     @classmethod
     def _get_values(
@@ -165,24 +169,24 @@ class Pivot:
         repeated_vars = ["_Cat", "_Sub", "_Spec", "_ICD_Code", "_Past_Doc"]
         dx_values = cls._get_values(data, "diagnoses")
         print("Diagnoses in dataset:")
-        
+
         # Dictionary to collect all new columns
         all_new_cols = {}
-        
+
         for dx_val in dx_values:
             print(dx_val)
             col_name = cls._clean_dx_value(dx_val)
-            
+
             # Collect all updates for this diagnosis
             present_data = [0] * len(data)
             certainty_data = [None] * len(data)
             time_data = [None] * len(data)
             repeated_data = {var: [None] * len(data) for var in repeated_vars}
-            
+
             for i in range(len(data)):
                 for n in cls.DX_NS:
                     details = cls._get_diagnosis_details(data, i, n)
-                    
+
                     # Check if this row has the specific diagnosis
                     if details.diagnosis == dx_val:
                         # Apply filter if selected
@@ -190,7 +194,7 @@ class Pivot:
                             present_data[i] = 1
                             certainty_data[i] = details.certainty
                             time_data[i] = details.time
-                            
+
                             # Store repeated variables data
                             for var in repeated_vars:
                                 orginal_var_name = (
@@ -198,23 +202,23 @@ class Pivot:
                                 )
                                 repeated_data[var][i] = data.at[
                                     i,
-                                    f"Diagnosis_ClinicianConsensus,DX_{n}{orginal_var_name}"
-                                    ]
-                            
+                                    f"Diagnosis_ClinicianConsensus,DX_{n}{orginal_var_name}",
+                                ]
+
                             # If dx is found, do not need to check other dx numbers
                             break
-            
+
             # Store columns for this diagnosis
             all_new_cols[f"{col_name}_DiagnosisPresent"] = present_data
             all_new_cols[f"{col_name}_Certainty"] = certainty_data
             all_new_cols[f"{col_name}_Time"] = time_data
             for var in repeated_vars:
                 all_new_cols[f"{col_name}{var}"] = repeated_data[var]
-        
+
         # Add all new columns at once to avoid fragmentation
         new_df = pd.DataFrame(all_new_cols, index=output.index)
         output = pd.concat([output, new_df], axis=1)
-        
+
         return output
 
     @classmethod
@@ -239,18 +243,18 @@ class Pivot:
         """
         dx_values = cls._get_values(data, "subcategories")
         print("Diagnostic subcategories in dataset:")
-        
+
         # Dictionary to collect all new columns
         all_new_cols = {}
-        
+
         for dx_val in dx_values:
             print(dx_val)
             col_name = cls._clean_dx_value(dx_val)
-            
+
             # Collect all updates for this subcategory
             present_data = [0] * len(data)
             details_data = [""] * len(data) if include_details else None
-            
+
             for i in range(len(data)):
                 cat_details = []
                 for n in cls.DX_NS:
@@ -259,7 +263,7 @@ class Pivot:
                         # Apply filter if selected
                         if cls._filter_pass(details.certainty, certainty_filter):
                             present_data[i] = 1
-                            
+
                             # Create dictionary to store details on a diagnostic level
                             cat_dict = {
                                 "diagnosis": details.diagnosis,
@@ -271,20 +275,20 @@ class Pivot:
                                 else details.past_doc,
                             }
                             cat_details.append(cat_dict)
-                
+
                 # Store subcategory details
                 if include_details and cat_details:
                     details_data[i] = str(cat_details).strip("[]")
-            
+
             # Store columns for this subcategory
             all_new_cols[f"{col_name}_SubcategoryPresent"] = present_data
             if include_details:
                 all_new_cols[f"{col_name}_Details"] = details_data
-        
+
         # Add all new columns at once to avoid fragmentation
         new_df = pd.DataFrame(all_new_cols, index=output.index)
         output = pd.concat([output, new_df], axis=1)
-        
+
         return output
 
     @classmethod
@@ -309,18 +313,18 @@ class Pivot:
         """
         dx_values = cls._get_values(data, "categories")
         print("Diagnostic categories in dataset:")
-        
+
         # Dictionary to collect all new columns
         all_new_cols = {}
-        
+
         for dx_val in dx_values:
             print(dx_val)
             col_name = cls._clean_dx_value(dx_val)
-            
+
             # Collect all updates for this category
             present_data = [0] * len(data)
             details_data = [""] * len(data) if include_details else None
-            
+
             for i in range(len(data)):
                 cat_details = []
                 for n in cls.DX_NS:
@@ -329,7 +333,7 @@ class Pivot:
                         # Apply filter if selected
                         if cls._filter_pass(details.certainty, certainty_filter):
                             present_data[i] = 1
-                            
+
                             # Create dictionary to store details on a diagnostic level
                             cat_dict = {
                                 "diagnosis": details.diagnosis,
@@ -342,18 +346,18 @@ class Pivot:
                                 else details.past_doc,
                             }
                             cat_details.append(cat_dict)
-                
+
                 # Store category details
                 if include_details and cat_details:
                     details_data[i] = str(cat_details).strip("[]")
-            
+
             # Store columns for this category
             all_new_cols[f"{col_name}_CategoryPresent"] = present_data
             if include_details:
                 all_new_cols[f"{col_name}_Details"] = details_data
-        
+
         # Add all new columns at once to avoid fragmentation
         new_df = pd.DataFrame(all_new_cols, index=output.index)
         output = pd.concat([output, new_df], axis=1)
-        
+
         return output

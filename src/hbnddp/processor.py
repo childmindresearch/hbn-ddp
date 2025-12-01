@@ -19,7 +19,7 @@ class Processor:
         path = Path(input_path)
         if not path.exists():
             raise FileNotFoundError(f"File {path} not found.")
-        try: 
+        try:
             data = pd.read_csv(path, low_memory=False)
         except Exception as e:
             raise ValueError(f"Error reading {path} as CSV: {e}")
@@ -53,19 +53,25 @@ class Processor:
             "Diagnosis_ClinicianConsensus,Site",
             "Diagnosis_ClinicianConsensus,Year",
         ]
-        # Copy ID column, any present unchanged DX columns, 
+        # Copy ID column, any present unchanged DX columns,
         # and any columns from other intruments.
-        unchanged_cols = list(set(
-            ["Identifiers"] + \
-            [col for col in unchanged_dx_cols if col in data.columns] + \
-            [col for col in data.columns if "Diagnosis_ClinicianConsensus" not in col]
-        ))
+        unchanged_cols = list(
+            set(
+                ["Identifiers"]
+                + [col for col in unchanged_dx_cols if col in data.columns]
+                + [
+                    col
+                    for col in data.columns
+                    if "Diagnosis_ClinicianConsensus" not in col
+                ]
+            )
+        )
         # Create DataFrame with copied columns to store output
         output = pd.DataFrame()
         output[unchanged_cols] = data[unchanged_cols].copy()
         # Remove extra text in ID column if present
-        output["Identifiers"] = (
-            output["Identifiers"].replace(",assessment", "", regex=True)
+        output["Identifiers"] = output["Identifiers"].replace(
+            ",assessment", "", regex=True
         )
         return output
 
