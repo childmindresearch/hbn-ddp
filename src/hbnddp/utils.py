@@ -14,6 +14,7 @@ def show(fig: go.Figure) -> None:
     pio.write_image(fig, buf)
     img = Image.open(buf)
     img.show()
+    buf.close()
 
 
 def write(

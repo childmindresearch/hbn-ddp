@@ -40,9 +40,13 @@ pip install git+https://github.com/childmindresearch/hbn-preprocess.git
 hbnddp
 
 ## Quick start
-```sh
-from hbnddp import hbn_ddp
-hbn_ddp.HBNData.process()
+```python
+from hbnddp import HBNData
+
+processed = HBNData.process(
+    input_path="path/to/data.csv",
+    output_path="path/to/output.csv"
+)
 ```
 [Notebook Example](https://github.com/childmindresearch/hbn-preprocess/blob/main/examples/pivot_example.ipynb)
 

@@ -1,6 +1,5 @@
 """Module for handling the HBN data."""
 
-from dataclasses import dataclass
 from typing import Literal
 
 import pandas as pd
@@ -8,13 +7,6 @@ import pandas as pd
 from .processor import Processor
 from .utils import write
 from .viz import visualize
-
-
-@dataclass
-class DataConfig:
-    """Data configuration class."""
-
-    clean_data: bool = False
 
 
 class HBNData:
