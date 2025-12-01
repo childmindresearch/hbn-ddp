@@ -1,22 +1,32 @@
 """Pivoting for HBN data."""
 
-import itertools
+import re
 from dataclasses import dataclass
+from enum import Enum
 from typing import Literal, Optional
-from warnings import simplefilter
 
 import numpy as np
 import pandas as pd
 
-# Ignore performance warnings from pandas
-# TODO: concatenate all new values at once for performance
-simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
-
 TIME_COURSE_DXES = [
     "Major Depressive Disorder",
     "Persistent Depressive Disorder (Dysthymia)",
-]
+    ]
 
+class CertaintyLevel(Enum):
+    """Enum for certainty levels."""
+    BY_HX = "ByHx"
+    CONFIRMED = "Confirmed"
+    PRESUMPTIVE = "Presumptive"
+    RC = "RC"
+    RULE_OUT = "RuleOut"
+    UNKNOWN = "Unknown"
+
+class TimeCode(Enum):
+    """Enum for time codes."""
+    PRESENT = 1
+    PAST = 2
+    
 
 @dataclass
 class DxInfo:
@@ -35,9 +45,9 @@ class Pivot:
     """Class for pivoting the data."""
 
     DX_NS = [f"{n:02d}" for n in range(1, 11)]
-    DX_COLS = ["Diagnosis_ClinicianConsensus,DX_" + n for n in DX_NS]
-    DX_CAT_COLS = ["Diagnosis_ClinicianConsensus,DX_" + n + "_Cat" for n in DX_NS]
-    DX_SUB_COLS = ["Diagnosis_ClinicianConsensus,DX_" + n + "_Sub" for n in DX_NS]
+    DX_COLS = [f"Diagnosis_ClinicianConsensus,DX_{n}" for n in DX_NS]
+    DX_CAT_COLS = [f"Diagnosis_ClinicianConsensus,DX_{n}_Cat" for n in DX_NS]
+    DX_SUB_COLS = [f"Diagnosis_ClinicianConsensus,DX_{n}_Sub" for n in DX_NS]
     INVALID_DX_VALS = {
         "nan",
         "No Diagnosis Given",
@@ -49,7 +59,10 @@ class Pivot:
 
     @classmethod
     def _clean_dx_value(cls, value: str) -> str:
-        return "".join(filter(str.isalnum, str(value).strip()))
+        """Clean diagnosis value to use as column name."""
+        cleaned = re.sub(r'[^\w\s/-]', '', str(value).strip())
+        cleaned = cleaned.replace('/', '_').replace('-', '_')
+        return cleaned.replace(' ', '_')
 
     @classmethod
     def _get_values(
@@ -58,16 +71,18 @@ class Pivot:
         by: Literal["diagnoses", "subcategories", "categories"],
     ) -> list[str]:
         """Get the unique values to create columns for the pivot."""
-        columns = (
-            cls.DX_COLS
-            if by == "diagnoses"
-            else cls.DX_CAT_COLS
-            if by == "categories"
-            else cls.DX_SUB_COLS
-            if by == "subcategories"
-            else []
-        )
-
+        match by:
+            case "diagnoses":
+                columns = cls.DX_COLS
+            case "categories":
+                columns = cls.DX_CAT_COLS
+            case "subcategories":
+                columns = cls.DX_SUB_COLS
+            case _:
+                columns = []
+        # Filter for columns that exist in the data
+        columns = [col for col in columns if col in data.columns]
+        # Get unique values excluding invalid ones
         values = {
             x for x in set(data[columns].values.flatten()) if pd.notna(x)
         } - cls.INVALID_DX_VALS
@@ -76,42 +91,35 @@ class Pivot:
     @staticmethod
     def _set_certainty(data: pd.DataFrame, i: int, col: str) -> str:
         """Get the certainty for a diagnosis."""
-        # TODO: Consider using an enum for the certainty levels.
+        certainty_conds = [
+            (CertaintyLevel.BY_HX.value, data.at[i, f"{col}_ByHx"] == 1),
+            (CertaintyLevel.CONFIRMED.value, data.at[i, f"{col}_Confirmed"] == 1),
+            (CertaintyLevel.PRESUMPTIVE.value, data.at[i, f"{col}_Presum"] == 1),
+            (CertaintyLevel.RC.value, data.at[i, f"{col}_RC"] == 1),
+            (CertaintyLevel.RULE_OUT.value, data.at[i, f"{col}_RuleOut"] == 1),
+        ]
 
-        is_confirmed = data.at[i, col + "_Confirmed"] == 1
-        is_presum = data.at[i, col + "_Presum"] == 1
-        is_rc = data.at[i, col + "_RC"] == 1
-        is_ruleout = data.at[i, col + "_RuleOut"] == 1
-        is_byhx = data.at[i, col + "_ByHx"] == 1
-
-        confirmed = is_confirmed and not any([is_presum, is_rc, is_ruleout, is_byhx])
-        presum = is_presum and not any([is_confirmed, is_rc, is_ruleout, is_byhx])
-        rc = is_rc and not any([is_confirmed, is_presum, is_ruleout, is_byhx])
-        ruleout = is_ruleout and not any([is_confirmed, is_presum, is_rc, is_byhx])
-        byhx = is_byhx and not any([is_confirmed, is_presum, is_rc, is_ruleout])
-
-        if byhx:
-            certainty = "ByHx"
-        elif confirmed:
-            certainty = "Confirmed"
-        elif presum:
-            certainty = "Presumptive"
-        elif rc:
-            certainty = "RC"
-        elif ruleout:
-            certainty = "RuleOut"
+        certainty_matches = [name for name, cond in certainty_conds if cond]
+        if len(certainty_matches) == 1:
+            certainty = certainty_matches[0]
+        elif len(certainty_matches) > 1:
+            # multiple certainties
+            certainty = CertaintyLevel.UNKNOWN.value
         else:
-            certainty = "Unknown"
+            # no certainties
+            certainty = CertaintyLevel.UNKNOWN.value
+
         return certainty
 
     @staticmethod
     def _set_time(data: pd.DataFrame, i: int, col: str) -> str:
         """Get the time for a diagnosis."""
-        past = data.at[i, col + "_Time"] == 2
-        present = data.at[i, col + "_Time"] == 1
-        if past:
+        # set time to specific time course for applicable diagnoses
+        if data.at[i, f"{col}"] in TIME_COURSE_DXES:
+            time = "Specific Time Course"
+        elif data.at[i, f"{col}_Time"] == TimeCode.PAST.value:
             time = "Past"
-        elif present:
+        elif data.at[i, f"{col}_Time"] == TimeCode.PRESENT.value:
             time = "Present"
         else:
             time = "Unknown"
@@ -122,15 +130,14 @@ class Pivot:
         col = f"Diagnosis_ClinicianConsensus,DX_{n}"
         details = DxInfo(
             diagnosis=data.at[i, col],
-            sub=data.at[i, col + "_Sub"],
-            cat=data.at[i, col + "_Cat"],
-            code=data.at[i, col + "_Code"],
-            past_doc=data.at[i, col + "_Past_Doc"],
+            sub=data.at[i, f"{col}_Sub"],
+            cat=data.at[i, f"{col}_Cat"],
+            code=data.at[i, f"{col}_Code"],
+            past_doc=data.at[i, f"{col}_Past_Doc"],
             certainty=cls._set_certainty(data, i, col),
             time=cls._set_time(data, i, col),
         )
-        if details.diagnosis in TIME_COURSE_DXES:
-            details.time = "Specific Time Course"
+
         return details
 
     @classmethod
@@ -145,33 +152,69 @@ class Pivot:
         output: pd.DataFrame,
         certainty_filter: Optional[list[str]] = None,
     ) -> pd.DataFrame:
-        """Pivot the data by diagnoses."""
-        repeated_vars = ["_Cat", "_Sub", "_Spec", "_Code", "_Past_Doc"]
+        """Pivot the data by diagnoses.
+
+        Args:
+            data: Input DataFrame with HBN diagnostic data
+            output: Output DataFrame to append pivoted columns to
+            certainty_filter: Optional list of certainty levels to include
+
+        Returns:
+            Output DataFrame with diagnosis columns added
+        """
+        repeated_vars = ["_Cat", "_Sub", "_Spec", "_ICD_Code", "_Past_Doc"]
         dx_values = cls._get_values(data, "diagnoses")
         print("Diagnoses in dataset:")
+        
+        # Dictionary to collect all new columns
+        all_new_cols = {}
+        
         for dx_val in dx_values:
             print(dx_val)
             col_name = cls._clean_dx_value(dx_val)
-            output[col_name + "_DiagnosisPresent"] = 0
-            output[col_name + "_Certainty"] = None
-            output[col_name + "_Time"] = None
-            dx_cols = [col_name + var for var in repeated_vars]
-            output[dx_cols] = None
-            for i, n in itertools.product(range(0, len(data)), cls.DX_NS):
-                details = cls._get_diagnosis_details(data, i, n)
-                dx_n_col = f"Diagnosis_ClinicianConsensus,DX_{n}"
-                # locate presence of specific diagnosis
-                if details.diagnosis == dx_val:
-                    # apply filter if selected and set presence of diagnosis
-                    if cls._filter_pass(details.certainty, certainty_filter):
-                        output.at[i, f"{col_name}_DiagnosisPresent"] = 1
-                        # variables repeated by diagnosis
-                        for var in repeated_vars:
-                            output.at[i, col_name + var] = data.at[i, dx_n_col + var]
-                        # add certainty
-                        output.at[i, f"{col_name}_Certainty"] = details.certainty
-                        # add time
-                        output.at[i, f"{col_name}_Time"] = details.time
+            
+            # Collect all updates for this diagnosis
+            present_data = [0] * len(data)
+            certainty_data = [None] * len(data)
+            time_data = [None] * len(data)
+            repeated_data = {var: [None] * len(data) for var in repeated_vars}
+            
+            for i in range(len(data)):
+                for n in cls.DX_NS:
+                    details = cls._get_diagnosis_details(data, i, n)
+                    
+                    # Check if this row has the specific diagnosis
+                    if details.diagnosis == dx_val:
+                        # Apply filter if selected
+                        if cls._filter_pass(details.certainty, certainty_filter):
+                            present_data[i] = 1
+                            certainty_data[i] = details.certainty
+                            time_data[i] = details.time
+                            
+                            # Store repeated variables data
+                            for var in repeated_vars:
+                                orginal_var_name = (
+                                    "_Code" if var == "_ICD_Code" else var
+                                )
+                                repeated_data[var][i] = data.at[
+                                    i,
+                                    f"Diagnosis_ClinicianConsensus,DX_{n}{orginal_var_name}"
+                                    ]
+                            
+                            # If dx is found, do not need to check other dx numbers
+                            break
+            
+            # Store columns for this diagnosis
+            all_new_cols[f"{col_name}_DiagnosisPresent"] = present_data
+            all_new_cols[f"{col_name}_Certainty"] = certainty_data
+            all_new_cols[f"{col_name}_Time"] = time_data
+            for var in repeated_vars:
+                all_new_cols[f"{col_name}{var}"] = repeated_data[var]
+        
+        # Add all new columns at once to avoid fragmentation
+        new_df = pd.DataFrame(all_new_cols, index=output.index)
+        output = pd.concat([output, new_df], axis=1)
+        
         return output
 
     @classmethod
@@ -182,40 +225,66 @@ class Pivot:
         certainty_filter: Optional[list[str]] = None,
         include_details: bool = False,
     ) -> pd.DataFrame:
-        """Pivot the dataset on diagnostic subcategories."""
+        """Pivot the dataset on diagnostic subcategories.
+
+        Args:
+            data: Input DataFrame with HBN diagnostic data
+            output: Output DataFrame to append pivoted columns to
+            certainty_filter: Optional list of certainty levels to include
+            include_details: Whether to include diagnosis-level details.
+            These will be stored in a single column per subcategory.
+
+        Returns:
+            Output DataFrame with subcategory columns added
+        """
         dx_values = cls._get_values(data, "subcategories")
         print("Diagnostic subcategories in dataset:")
+        
+        # Dictionary to collect all new columns
+        all_new_cols = {}
+        
         for dx_val in dx_values:
             print(dx_val)
             col_name = cls._clean_dx_value(dx_val)
-            output[col_name + "_SubcategoryPresent"] = 0
-            if include_details:
-                # column for diagnostic level details
-                output[col_name + "_Certainty"] = ""
-            for i in range(0, len(data)):
+            
+            # Collect all updates for this subcategory
+            present_data = [0] * len(data)
+            details_data = [""] * len(data) if include_details else None
+            
+            for i in range(len(data)):
                 cat_details = []
                 for n in cls.DX_NS:
                     details = cls._get_diagnosis_details(data, i, n)
                     if details.sub == dx_val:
-                        # apply filter if selected
+                        # Apply filter if selected
                         if cls._filter_pass(details.certainty, certainty_filter):
-                            # set presence of subcategory
-                            output.at[i, col_name + "_SubcategoryPresent"] = 1
-                            # create dictionary to store details on a diagnostic level
+                            present_data[i] = 1
+                            
+                            # Create dictionary to store details on a diagnostic level
                             cat_dict = {
                                 "diagnosis": details.diagnosis,
-                                "code": details.code,
+                                "ICD_code": details.code,
                                 "certainty": details.certainty,
                                 "time": details.time,
                                 "past_documentation": ""
                                 if details.past_doc is None
                                 else details.past_doc,
                             }
-                            # add diagnosis level details
                             cat_details.append(cat_dict)
-                # add subcategory details to row
-                if include_details and len(cat_details) > 0:
-                    output.at[i, col_name + "_Details"] = str(cat_details).strip("[]")
+                
+                # Store subcategory details
+                if include_details and cat_details:
+                    details_data[i] = str(cat_details).strip("[]")
+            
+            # Store columns for this subcategory
+            all_new_cols[f"{col_name}_SubcategoryPresent"] = present_data
+            if include_details:
+                all_new_cols[f"{col_name}_Details"] = details_data
+        
+        # Add all new columns at once to avoid fragmentation
+        new_df = pd.DataFrame(all_new_cols, index=output.index)
+        output = pd.concat([output, new_df], axis=1)
+        
         return output
 
     @classmethod
@@ -226,41 +295,65 @@ class Pivot:
         certainty_filter: list[str] | None = None,
         include_details: bool = False,
     ) -> pd.DataFrame:
-        """Pivot the dataset on diagnostic categories."""
+        """Pivot the dataset on diagnostic categories.
+
+        Args:
+            data: Input DataFrame with HBN diagnostic data
+            output: Output DataFrame to append pivoted columns to
+            certainty_filter: Optional list of certainty levels to include
+            include_details: Whether to include diagnosis-level details.
+            These will be stored in a single column per category.
+
+        Returns:
+            Output DataFrame with category columns added
+        """
         dx_values = cls._get_values(data, "categories")
         print("Diagnostic categories in dataset:")
+        
+        # Dictionary to collect all new columns
+        all_new_cols = {}
+        
         for dx_val in dx_values:
             print(dx_val)
             col_name = cls._clean_dx_value(dx_val)
-            # column for the presence of diagnostic categories
-            output[col_name + "_CategoryPresent"] = 0
-            if include_details:
-                # column for diagnostic level details
-                output[col_name + "_Certainty"] = ""
-            for i in range(0, len(data)):
+            
+            # Collect all updates for this category
+            present_data = [0] * len(data)
+            details_data = [""] * len(data) if include_details else None
+            
+            for i in range(len(data)):
                 cat_details = []
                 for n in cls.DX_NS:
                     details = cls._get_diagnosis_details(data, i, n)
                     if details.cat == dx_val:
-                        # apply filter if selected
+                        # Apply filter if selected
                         if cls._filter_pass(details.certainty, certainty_filter):
-                            # set presence of category
-                            output.at[i, col_name + "_CategoryPresent"] = 1
-                            # create dictionary to store details on a diagnostic level
+                            present_data[i] = 1
+                            
+                            # Create dictionary to store details on a diagnostic level
                             cat_dict = {
                                 "diagnosis": details.diagnosis,
                                 "subcategory": details.sub,
-                                "code": details.code,
+                                "ICD_code": details.code,
                                 "certainty": details.certainty,
                                 "time": details.time,
                                 "past_documentation": ""
                                 if details.past_doc is None
                                 else details.past_doc,
                             }
-                            # add diagnosis level details
                             cat_details.append(cat_dict)
-                # add category details to row
-                if include_details and len(cat_details) > 0:
-                    output.at[i, col_name + "_Details"] = str(cat_details).strip("[]")
-
+                
+                # Store category details
+                if include_details and cat_details:
+                    details_data[i] = str(cat_details).strip("[]")
+            
+            # Store columns for this category
+            all_new_cols[f"{col_name}_CategoryPresent"] = present_data
+            if include_details:
+                all_new_cols[f"{col_name}_Details"] = details_data
+        
+        # Add all new columns at once to avoid fragmentation
+        new_df = pd.DataFrame(all_new_cols, index=output.index)
+        output = pd.concat([output, new_df], axis=1)
+        
         return output

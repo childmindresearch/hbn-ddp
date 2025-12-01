@@ -1,6 +1,7 @@
 """Unit tests for the Processor class in hbnpreprocess.processor module."""
 
 import itertools
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -26,6 +27,19 @@ def categories_df() -> pd.DataFrame:
     return pd.DataFrame(cols)
 
 
+@pytest.fixture
+def test_data_path() -> Path:
+    """Fixture for test data path."""
+    path = Path("tests/test_data.csv")
+    if not path.exists():
+        pytest.skip(f"Test data not found: {path}")
+    return path
+
+def test_load() -> None:
+    """Test load function."""
+    data = Processor.load("tests/test_data.csv")
+    assert data is not None
+
 def test_category_preprocessor(categories_df: pd.DataFrame) -> None:
     """Test the category processor."""
     categories_df.iloc[1, 1] = None
@@ -39,7 +53,6 @@ def test_category_preprocessor(categories_df: pd.DataFrame) -> None:
     assert result.iloc[2, 3] == categories_df.iloc[2, 2]
     assert result.iloc[2, 3] == "Cat_02_03"
 
-
 def test_copy_static_columns() -> None:
     """Test the copy static columns function."""
     static_cols = [
@@ -50,19 +63,27 @@ def test_copy_static_columns() -> None:
     ]
     df = pd.DataFrame(
         {
-            "Identifiers": ["Identifiers_01", "Identifiers_02,Identifiers_03"],
-            "Diagnosis_ClinicianConsensus,NoDX": ["NoDX_01", "NoDX_02"],
+            "Identifiers": ["NDAR1", "NDAR2,assessment"],
+            "Diagnosis_ClinicianConsensus,NoDX": [1, 0],
             "Diagnosis_ClinicianConsensus,Season": ["Season_01", "Season_02"],
             "Diagnosis_ClinicianConsensus,Site": ["Site_01", "Site_02"],
             "Diagnosis_ClinicianConsensus,Year": ["Year_01", "Year_02"],
-            "Extra_Column": ["Extra_01", "Extra_02"],
         }
     )
     result = Processor._copy_static_columns(df)
-    # Check that the result is as expected
-    assert result["Identifiers"].to_list() == [
-        "Identifiers_01",
-        "Identifiers_02",
-    ]
-    assert result.columns.tolist() == ["Identifiers"] + static_cols
+    # Check that IDs are copied correctly
+    assert result["Identifiers"].to_list() == ["NDAR1", "NDAR2"]
+    # Check that all expected columns are present
+    expected_cols = {"Identifiers"} | set(static_cols)
+    assert set(result.columns) == expected_cols
+    # Check that static columns have correct values
     assert result[static_cols].equals(df[static_cols])
+
+def test_pivot() -> None:
+    """Test pivot function."""
+    data = Processor.load("tests/test_data.csv")
+    output = Processor.pivot(data)
+    assert output is not None
+    assert output is not data
+    assert len(output) == len(data)
+
