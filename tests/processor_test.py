@@ -98,9 +98,9 @@ def test_pivot() -> None:
     assert len(output_filtered) == len(data)
     # Test "by" options
     for by_option in ["diagnoses", "subcategories", "categories", "all"]:
-        output_by = Processor.pivot(data, by=by_option) # type: ignore
+        output_by = Processor.pivot(data, by=by_option)  # type: ignore
         assert output_by is not None
         assert len(output_by) == len(data)
     # Test that invalid "by" option raises error
     with pytest.raises(ValueError):
-        Processor.pivot(data, by="invalid_option") # type: ignore
+        Processor.pivot(data, by="invalid_option")  # type: ignore

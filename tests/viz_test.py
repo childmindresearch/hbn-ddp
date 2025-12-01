@@ -24,7 +24,7 @@ def test_bar() -> None:
     os.remove("./figures/subcategory_bar_plot.png")
     # Test that invalid col_type raises ValueError
     try:
-        _bar(test_result, col_type="InvalidType") # type: ignore
+        _bar(test_result, col_type="InvalidType")  # type: ignore
         assert False
     except ValueError:
         assert True
