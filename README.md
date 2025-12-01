@@ -3,11 +3,11 @@
 # HBN Diagnostic Data Preprocessing
 A Python preprocessing package for working with the Healthy Brain Network clinician consensus diagnostic data.
 
-[![Build](https://github.com/childmindresearch/hbn-preprocess/actions/workflows/test.yaml/badge.svg?branch=main)](https://github.com/childmindresearch/hbn-preprocess/actions/workflows/test.yaml?query=branch%3Amain)
-[![codecov](https://codecov.io/gh/childmindresearch/hbn-preprocess/branch/main/graph/badge.svg?token=22HWWFWPW5)](https://codecov.io/gh/childmindresearch/hbn-preprocess)
+[![Build](https://github.com/childmindresearch/hbn-ddp/actions/workflows/test.yaml/badge.svg?branch=main)](https://github.com/childmindresearch/hbn-ddp/actions/workflows/test.yaml?query=branch%3Amain)
+[![codecov](https://codecov.io/gh/childmindresearch/hbn-ddp/branch/main/graph/badge.svg?token=22HWWFWPW5)](https://codecov.io/gh/childmindresearch/hbn-ddp)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 ![stability-stable](https://img.shields.io/badge/stability-stable-green.svg)
-[![pages](https://img.shields.io/badge/api-docs-blue)](https://childmindresearch.github.io/hbn-preprocess)
+[![pages](https://img.shields.io/badge/api-docs-blue)](https://childmindresearch.github.io/hbn-ddp)
 
 ## Features
 The raw HBN dataset includes final clinician diagnostic data given across ten numbered diagnosis columns. The order of these diagnoses is not indicative of severity, chronology, or importance, and this format requires data manipulation to be useful for analysis. This package transforms the data to a wider format, organized by specific diagnoses or categories rather than diagnosis numbers. It also includes the option to filter by diagnostic certainty or time of diagnosis and creates a visualization of the diagnostic data. Option to either run interactively in the command line (recommended if not familiar with the dataset) or to install as a python package.
@@ -32,7 +32,7 @@ For more information on the HBN data, please see the [HBN Data Portal](https://f
 Install this package via :
 
 ```sh
-pip install git+https://github.com/childmindresearch/hbn-preprocess.git
+pip install git+https://github.com/childmindresearch/hbn-ddp.git
 ```
 
 ## Run interactively in the command line
@@ -48,6 +48,6 @@ processed = HBNData.process(
     output_path="path/to/output.csv"
 )
 ```
-[Notebook Example](https://github.com/childmindresearch/hbn-preprocess/blob/main/examples/pivot_example.ipynb)
+[Notebook Example](https://github.com/childmindresearch/hbn-ddp/blob/main/examples/pivot_example.ipynb)
 
 ## Links or References

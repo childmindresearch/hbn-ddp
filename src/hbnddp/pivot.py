@@ -197,12 +197,12 @@ class Pivot:
 
                             # Store repeated variables data
                             for var in repeated_vars:
-                                orginal_var_name = (
+                                original_var_name = (
                                     "_Code" if var == "_ICD_Code" else var
                                 )
                                 repeated_data[var][i] = data.at[
                                     i,
-                                    f"Diagnosis_ClinicianConsensus,DX_{n}{orginal_var_name}",
+                                    f"Diagnosis_ClinicianConsensus,DX_{n}{original_var_name}",
                                 ]
 
                             # If dx is found, do not need to check other dx numbers

@@ -24,8 +24,6 @@ expected_diagnoses = [
     if pd.notna(d)
     and d not in {"No Diagnosis Given", "No Diagnosis Given: Incomplete Eval", "", " "}
 ]
-print(expected_diagnoses)
-
 
 def test_clean_dx_value() -> None:
     """Test cleaning diagnosis value."""
