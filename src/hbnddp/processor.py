@@ -64,7 +64,9 @@ class Processor:
         output = pd.DataFrame()
         output[unchanged_cols] = data[unchanged_cols].copy()
         # Remove extra text in ID column if present
-        output["Identifiers"] = output["Identifiers"].str.split(",").str[0]
+        output["Identifiers"] = (
+            output["Identifiers"].replace(",assessment", "", regex=True)
+        )
         return output
 
     @staticmethod

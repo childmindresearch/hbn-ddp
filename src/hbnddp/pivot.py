@@ -152,9 +152,17 @@ class Pivot:
         output: pd.DataFrame,
         certainty_filter: Optional[list[str]] = None,
     ) -> pd.DataFrame:
-        """Pivot the data by diagnoses."""
-        #TODO: update "Code" column to specify ICD code
-        repeated_vars = ["_Cat", "_Sub", "_Spec", "_Code", "_Past_Doc"]
+        """Pivot the data by diagnoses.
+
+        Args:
+            data: Input DataFrame with HBN diagnostic data
+            output: Output DataFrame to append pivoted columns to
+            certainty_filter: Optional list of certainty levels to include
+
+        Returns:
+            Output DataFrame with diagnosis columns added
+        """
+        repeated_vars = ["_Cat", "_Sub", "_Spec", "_ICD_Code", "_Past_Doc"]
         dx_values = cls._get_values(data, "diagnoses")
         print("Diagnoses in dataset:")
         
@@ -185,8 +193,13 @@ class Pivot:
                             
                             # Store repeated variables data
                             for var in repeated_vars:
+                                orginal_var_name = (
+                                    "_Code" if var == "_ICD_Code" else var
+                                )
                                 repeated_data[var][i] = data.at[
-                                    i, f"Diagnosis_ClinicianConsensus,DX_{n}{var}"]
+                                    i,
+                                    f"Diagnosis_ClinicianConsensus,DX_{n}{orginal_var_name}"
+                                    ]
                             
                             # If dx is found, do not need to check other dx numbers
                             break
@@ -212,7 +225,18 @@ class Pivot:
         certainty_filter: Optional[list[str]] = None,
         include_details: bool = False,
     ) -> pd.DataFrame:
-        """Pivot the dataset on diagnostic subcategories."""
+        """Pivot the dataset on diagnostic subcategories.
+
+        Args:
+            data: Input DataFrame with HBN diagnostic data
+            output: Output DataFrame to append pivoted columns to
+            certainty_filter: Optional list of certainty levels to include
+            include_details: Whether to include diagnosis-level details.
+            These will be stored in a single column per subcategory.
+
+        Returns:
+            Output DataFrame with subcategory columns added
+        """
         dx_values = cls._get_values(data, "subcategories")
         print("Diagnostic subcategories in dataset:")
         
@@ -271,7 +295,18 @@ class Pivot:
         certainty_filter: list[str] | None = None,
         include_details: bool = False,
     ) -> pd.DataFrame:
-        """Pivot the dataset on diagnostic categories."""
+        """Pivot the dataset on diagnostic categories.
+
+        Args:
+            data: Input DataFrame with HBN diagnostic data
+            output: Output DataFrame to append pivoted columns to
+            certainty_filter: Optional list of certainty levels to include
+            include_details: Whether to include diagnosis-level details.
+            These will be stored in a single column per category.
+
+        Returns:
+            Output DataFrame with category columns added
+        """
         dx_values = cls._get_values(data, "categories")
         print("Diagnostic categories in dataset:")
         

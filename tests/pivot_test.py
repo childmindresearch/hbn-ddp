@@ -8,7 +8,6 @@ from hbnddp.processor import Processor
 test_data = Processor.load("tests/test_data.csv")
 test_output = Processor._copy_static_columns(test_data)
 
-
 # Expected unique diagnoses in test data
 expected_diagnoses = pd.unique(
     test_data[[
@@ -191,7 +190,7 @@ def test_diagnoses() -> None:
                      ] == "Neurodevelopmental Disorders"
     assert output.at[0, "ADHD_Hyperactive_Impulsive_Type_Sub"
                      ] == "Attention-Deficit/Hyperactivity Disorder"
-    assert output.at[0, "ADHD_Hyperactive_Impulsive_Type_Code"] == "2"
+    assert output.at[0, "ADHD_Hyperactive_Impulsive_Type_ICD_Code"] == "2"
     assert output.at[0, "ADHD_Hyperactive_Impulsive_Type_Certainty"] == "Confirmed"
     assert output.at[0, "ADHD_Hyperactive_Impulsive_Type_Time"] == "Present"
     assert output.at[0, "ADHD_Hyperactive_Impulsive_Type_Past_Doc"] is pd.NA
