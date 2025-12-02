@@ -30,6 +30,9 @@ def write(
     if output_path is None:
         input_directory = input_path.rsplit("/", 1)[0] if "/" in input_path else "."
         input_file_name = input_path.rsplit("/", 1)[1]
-        output_path = f"{input_directory}/{input_file_name.rsplit('.', 1)[0]}_processed_{by}.csv"
+        output_path = (
+            f"{input_directory}/"
+            f"{input_file_name.rsplit('.', 1)[0]}_processed_{by}.csv"
+        )
     output.to_csv(output_path, index=False)
     logger.info("Data saved to %s", output_path)
