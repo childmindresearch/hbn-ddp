@@ -1,11 +1,14 @@
 """Util functions."""
 
 import io
+import logging
 
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
 from PIL import Image
+
+logger = logging.getLogger(__name__)
 
 
 def show(fig: go.Figure) -> None:
@@ -25,6 +28,8 @@ def write(
 ) -> None:
     """Write the processed data to a CSV file."""
     if output_path is None:
-        output_path = f"{input_path}_processed_{by}.csv"
+        input_directory = input_path.rsplit("/", 1)[0] if "/" in input_path else "."
+        input_file_name = input_path.rsplit("/", 1)[1]
+        output_path = f"{input_directory}/{input_file_name.rsplit('.', 1)[0]}_processed_{by}.csv"
     output.to_csv(output_path, index=False)
-    print(f"Data saved to {output_path}")
+    logger.info("Data saved to %s", output_path)

@@ -22,6 +22,9 @@ def test_bar() -> None:
     os.remove("./figures/diagnosis_bar_plot.png")
     os.remove("./figures/category_bar_plot.png")
     os.remove("./figures/subcategory_bar_plot.png")
+    # Delete created directory if empty
+    if not os.listdir("./figures"):
+        os.rmdir("./figures")
     # Test that invalid col_type raises ValueError
     try:
         _bar(test_result, col_type="InvalidType")  # type: ignore

@@ -20,10 +20,10 @@ def test_show() -> None:
 
 def test_write() -> None:
     """Test write function."""
-    write(test_data, input_path="./test_data", by="diagnoses", output_path=None)
+    write(test_data, input_path="tests/test_data.csv", by="diagnoses", output_path=None)
     # Check that file was created
     import os
 
-    assert os.path.exists("./test_data_processed_diagnoses.csv")
+    assert os.path.exists("tests/test_data_processed_diagnoses.csv")
     # Delete created file
-    os.remove("./test_data_processed_diagnoses.csv")
+    os.remove("tests/test_data_processed_diagnoses.csv")
