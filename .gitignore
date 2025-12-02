@@ -9,6 +9,9 @@ examples/figures/
 # MacOS
 .DS_Store
 
+# IDE
+.vscode/
+
 # Python
 __pycache__/
 
