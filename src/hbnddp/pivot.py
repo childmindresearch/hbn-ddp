@@ -1,5 +1,6 @@
 """Pivoting for HBN data."""
 
+import logging
 import re
 from dataclasses import dataclass
 from enum import Enum
@@ -7,6 +8,8 @@ from typing import Any, Literal, Optional
 
 import numpy as np
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 TIME_COURSE_DXES = [
     "Major Depressive Disorder",
@@ -168,13 +171,12 @@ class Pivot:
         """
         repeated_vars = ["_Cat", "_Sub", "_Spec", "_ICD_Code", "_Past_Doc"]
         dx_values = cls._get_values(data, "diagnoses")
-        print("Diagnoses in dataset:")
+        logger.info("Processing diagnoses")
 
         # Dictionary to collect all new columns
         all_new_cols: dict[str, Any] = {}
 
         for dx_val in dx_values:
-            print(dx_val)
             col_name = cls._clean_dx_value(dx_val)
 
             # Collect all updates for this diagnosis
@@ -244,13 +246,12 @@ class Pivot:
             Output DataFrame with subcategory columns added
         """
         dx_values = cls._get_values(data, "subcategories")
-        print("Diagnostic subcategories in dataset:")
+        logger.info("Processing diagnostic subcategories.")
 
         # Dictionary to collect all new columns
         all_new_cols: dict[str, Any] = {}
 
         for dx_val in dx_values:
-            print(dx_val)
             col_name = cls._clean_dx_value(dx_val)
 
             # Collect all updates for this subcategory
@@ -314,13 +315,12 @@ class Pivot:
             Output DataFrame with category columns added
         """
         dx_values = cls._get_values(data, "categories")
-        print("Diagnostic categories in dataset:")
+        logger.info("Processing diagnostic categories.")
 
         # Dictionary to collect all new columns
         all_new_cols: dict[str, Any] = {}
 
         for dx_val in dx_values:
-            print(dx_val)
             col_name = cls._clean_dx_value(dx_val)
 
             # Collect all updates for this category

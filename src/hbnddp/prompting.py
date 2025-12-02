@@ -1,9 +1,12 @@
 """Prompts user for interactive data filtering."""
 
+import logging
 from pathlib import Path
 from typing import Any
 
 import questionary
+
+logger = logging.getLogger(__name__)
 
 certainties = ["Confirmed", "Presumptive", "RC", "RuleOut", "ByHx", "Unknown"]
 
@@ -19,13 +22,13 @@ class Interactive:
             default="./data/",
         ).ask()
         while not Path(input_path).exists():
-            print(f"File {input_path} not found.")
+            logger.error("File %s not found.", input_path)
             input_path = questionary.path(
                 message="Please enter the path to the HBN data file.",
                 default="./data/",
             ).ask()
         while not input_path.endswith(".csv"):
-            print("File must be a CSV.")
+            logger.error("File must be a CSV.")
             input_path = questionary.path(
                 message="Please enter the path to the HBN data file.",
                 default="./data/",
@@ -36,9 +39,9 @@ class Interactive:
         ).ask()
         while output_path is None or not Path(output_path).parent.exists():
             if output_path is None:
-                print("Output path cannot be empty.")
+                logger.error("Output path cannot be empty.")
             else:
-                print(f"Directory {str(Path(output_path).parent)} not found.")
+                logger.error("Directory %s not found.", str(Path(output_path).parent))
             output_path = questionary.path(
                 message="Please enter the output path to save the processed data.",
                 default=input_path.replace(".csv", "_processed.csv"),
@@ -66,16 +69,15 @@ class Interactive:
     @staticmethod
     def _data_filter(**kwargs: Any) -> dict:  # noqa: ANN401
         """Prompts user for filtering."""
-        print(
+        logger.info(
             "The HBN dataset includes diagnoses with varying levels of diagnostic "
-            "certainty. \n If a clinician was not able to confirm a diagnosis, "
+            "certainty. If a clinician was not able to confirm a diagnosis, "
             "but symptoms were endorsed, they may refer families to follow up or seek "
-            "further testing. \n\n"
+            "further testing. "
             "Possible diagnostic certainties in the dataset include: "
             "confirmed, presumptive, requires confirmation (RC), rule out, and by "
-            "history (ByHx). \n\n"
+            "history (ByHx). "
             "The dataset also indicates the time course of diagnoses - past or present."
-            "\n \n"
         )
         url = "https://fcon_1000.projects.nitrc.org/indi/cmi_healthy_brain_network/Phenotypic.html#Diagnosis"
         text = "HBN Diagnostic Process"

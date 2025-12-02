@@ -55,16 +55,14 @@ class Processor:
         ]
         # Copy ID column, any present unchanged DX columns,
         # and any columns from other intruments.
-        unchanged_cols = list(
-            set(
-                ["Identifiers"]
-                + [col for col in unchanged_dx_cols if col in data.columns]
-                + [
-                    col
-                    for col in data.columns
-                    if "Diagnosis_ClinicianConsensus" not in col
-                ]
-            )
+        unchanged_cols = (
+            ["Identifiers"]
+            + [col for col in unchanged_dx_cols if col in data.columns]
+            + [
+                col
+                for col in data.columns
+                if "Diagnosis_ClinicianConsensus" not in col and col != "Identifiers"
+            ]
         )
         # Create DataFrame with copied columns to store output
         output = pd.DataFrame()

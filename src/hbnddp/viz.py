@@ -1,10 +1,13 @@
 """Basic visualization of the HBN data."""
 
+import logging
 import os
 from typing import Literal
 
 import pandas as pd
 import plotly.graph_objects as go
+
+logger = logging.getLogger(__name__)
 
 
 def _bar(
@@ -79,7 +82,7 @@ def _save_fig(fig: go.Figure, col_type: str) -> None:
     col_type = col_type.replace("Present", "").lower()
     file_path = os.path.join(figures_dir, f"{col_type}_bar_plot.png")
     fig.write_image(file_path)
-    print(f"Figure saved to {file_path}.")
+    logger.info("Figure saved to %s", file_path)
 
 
 def visualize(
