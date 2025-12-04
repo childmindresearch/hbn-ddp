@@ -12,9 +12,20 @@ from .viz import visualize
 class HBNData:
     """Class for handling the HBN diagnostic data."""
 
-    @staticmethod
+    def __init__(self, input_path: str) -> None:
+        """Initialize the HBNData class."""
+        self.input_path = input_path
+        self.processor = Processor()
+        self.data = self.processor.load(input_path)
+        # if "Diagnosis_ClinicianConsensus,DX_01" in self.data.columns:
+        #     self.column_prefix = "Diagnosis_ClinicianConsensus,"
+        # elif "DX_01" in self.data.columns:
+        #     self.column_prefix = ""
+        # else:
+        #     raise ValueError("No valid diagnosis columns found in data.")
+
     def process(
-        input_path: str,
+        self,
         output_path: str | None = None,
         by: Literal[
             "diagnoses",
@@ -45,9 +56,9 @@ class HBNData:
         Returns:
             The processed data.
         """
-        data = Processor.load(input_path)
-        output = Processor.pivot(data, by, certainty_filter, include_details)
+        output = self.processor.pivot(self.data, by, certainty_filter, include_details)
         if viz:
             visualize(output, by)
-        write(output, input_path=input_path, by=by, output_path=output_path)
+        write(output, input_path=self.input_path, by=by, output_path=output_path)
+        self.processed_data = output
         return output
