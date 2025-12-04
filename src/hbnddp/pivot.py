@@ -52,9 +52,7 @@ class Pivot:
     """Class for pivoting the data."""
 
     DX_NS = [f"{n:02d}" for n in range(1, 11)]
-    # DX_COLS = [f"{self.column_prefix}DX_{n}" for n in DX_NS]
-    # DX_CAT_COLS = [f"{self.column_prefix}DX_{n}_Cat" for n in DX_NS]
-    # DX_SUB_COLS = [f"{self.column_prefix}DX_{n}_Sub" for n in DX_NS]
+
     INVALID_DX_VALS = {
         "nan",
         "No Diagnosis Given",
@@ -79,7 +77,6 @@ class Pivot:
         column_prefix: str | None,
     ) -> list[str]:
         """Get the unique values to create columns for the pivot."""
-        cls.column_prefix = column_prefix
         match by:
             case "diagnoses":
                 columns = [f"{column_prefix}DX_{n}" for n in cls.DX_NS]
@@ -135,8 +132,10 @@ class Pivot:
         return time
 
     @classmethod
-    def _get_diagnosis_details(cls, data: pd.DataFrame, i: int, n: str) -> DxInfo:
-        col = f"{cls.column_prefix}DX_{n}"
+    def _get_diagnosis_details(
+        cls, data: pd.DataFrame, i: int, n: str, column_prefix: str | None
+    ) -> DxInfo:
+        col = f"{column_prefix}DX_{n}"
         details = DxInfo(
             diagnosis=data.at[i, col],
             sub=data.at[i, f"{col}_Sub"],
@@ -193,7 +192,7 @@ class Pivot:
 
             for i in range(len(data)):
                 for n in cls.DX_NS:
-                    details = cls._get_diagnosis_details(data, i, n)
+                    details = cls._get_diagnosis_details(data, i, n, column_prefix)
 
                     # Check if this row has the specific diagnosis
                     if details.diagnosis == dx_val:
@@ -210,7 +209,7 @@ class Pivot:
                                 )
                                 repeated_data[var][i] = data.at[
                                     i,
-                                    f"{cls.column_prefix}DX_{n}{original_var_name}",
+                                    f"{column_prefix}DX_{n}{original_var_name}",
                                 ]
 
                             # If dx is found, do not need to check other dx numbers
@@ -267,7 +266,7 @@ class Pivot:
             for i in range(len(data)):
                 cat_details = []
                 for n in cls.DX_NS:
-                    details = cls._get_diagnosis_details(data, i, n)
+                    details = cls._get_diagnosis_details(data, i, n, column_prefix)
                     if details.sub == dx_val:
                         # Apply filter if selected
                         if cls._filter_pass(details.certainty, certainty_filter):
@@ -338,7 +337,7 @@ class Pivot:
             for i in range(len(data)):
                 cat_details = []
                 for n in cls.DX_NS:
-                    details = cls._get_diagnosis_details(data, i, n)
+                    details = cls._get_diagnosis_details(data, i, n, column_prefix)
                     if details.cat == dx_val:
                         # Apply filter if selected
                         if cls._filter_pass(details.certainty, certainty_filter):

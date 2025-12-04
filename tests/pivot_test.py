@@ -9,13 +9,15 @@ test_data = Processor().load(input_path="tests/test_data.csv")
 test_output = Processor()._copy_static_columns(data=test_data)
 
 # Expected unique diagnoses in test data
-expected_diagnoses = pd.unique(
-    test_data[
-        [
-            f"Diagnosis_ClinicianConsensus,DX_{n}"
-            for n in [f"{n:02d}" for n in range(1, 11)]
-        ]
-    ].values.ravel()
+expected_diagnoses = list(
+    pd.unique(
+        test_data[
+            [
+                f"Diagnosis_ClinicianConsensus,DX_{n}"
+                for n in [f"{n:02d}" for n in range(1, 11)]
+            ]
+        ].values.ravel()
+    )
 )
 # Filter out invalid diagnosis values
 expected_diagnoses = [
