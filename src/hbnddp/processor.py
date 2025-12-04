@@ -13,8 +13,11 @@ VALID_CERTAINTIES = ["Confirmed", "Presumptive", "RC", "RuleOut", "ByHx", "Unkno
 class Processor:
     """Class for processing the HBN data."""
 
-    @staticmethod
-    def load(input_path: str) -> pd.DataFrame:
+    def __init__(self) -> None:
+        """Initialize the Processor class."""
+        self.column_prefix: str | None = None
+
+    def load(self, input_path: str) -> pd.DataFrame:
         """Load the data."""
         path = Path(input_path)
         if not path.exists():
@@ -23,19 +26,24 @@ class Processor:
             data = pd.read_csv(path, low_memory=False)
         except Exception as e:
             raise ValueError(f"Error reading {path} as CSV: {e}")
-        if data.filter(like="Diagnosis_ClinicianConsensus").columns.empty:
-            raise ValueError(
-                "No columns found with 'Diagnosis_ClinicianConsensus' in the name."
-            )
-        return Processor._preprocess_categories(data)
+        if "Diagnosis_ClinicianConsensus,DX_01" in data.columns:
+            self.column_prefix = "Diagnosis_ClinicianConsensus,"
+        elif "DX_01" in data.columns:
+            self.column_prefix = ""
+        else:
+            raise ValueError("No valid diagnosis columns found in data.")
+        # if data.filter(like="Diagnosis_ClinicianConsensus").columns.empty:
+        #     raise ValueError(
+        #         "No columns found with 'Diagnosis_ClinicianConsensus' in the name."
+        #     )
+        return self._preprocess_categories(data=data)
 
-    @staticmethod
-    def _preprocess_categories(data: pd.DataFrame) -> pd.DataFrame:
+    def _preprocess_categories(self, data: pd.DataFrame) -> pd.DataFrame:
         """Preprocess the categories by filling missing subcategories."""
         cat_sub_cols = [
             (
-                f"Diagnosis_ClinicianConsensus,DX_{n:02d}_Cat",
-                f"Diagnosis_ClinicianConsensus,DX_{n:02d}_Sub",
+                f"{self.column_prefix}DX_{n:02d}_Cat",
+                f"{self.column_prefix}DX_{n:02d}_Sub",
             )
             for n in range(1, 11)
         ]
@@ -43,27 +51,20 @@ class Processor:
             data[sub] = data[sub].fillna(data[cat])
         return data
 
-    @staticmethod
-    def _copy_static_columns(data: pd.DataFrame) -> pd.DataFrame:
+    def _copy_static_columns(self, data: pd.DataFrame) -> pd.DataFrame:
         """Copy the subject data for output."""
         # Diagnosis_ClinicianConsensus columns that are not affected by pivoting
         unchanged_dx_cols = [
-            "Diagnosis_ClinicianConsensus,NoDX",
-            "Diagnosis_ClinicianConsensus,Season",
-            "Diagnosis_ClinicianConsensus,Site",
-            "Diagnosis_ClinicianConsensus,Year",
+            f"{self.column_prefix}NoDX",
+            f"{self.column_prefix}Season",
+            f"{self.column_prefix}Site",
+            f"{self.column_prefix}Year",
         ]
         # Copy ID column, any present unchanged DX columns,
         # and any columns from other intruments.
-        unchanged_cols = (
-            ["Identifiers"]
-            + [col for col in unchanged_dx_cols if col in data.columns]
-            + [
-                col
-                for col in data.columns
-                if "Diagnosis_ClinicianConsensus" not in col and col != "Identifiers"
-            ]
-        )
+        unchanged_cols = ["Identifiers"] + [
+            col for col in unchanged_dx_cols if col in data.columns
+        ]
         # Create DataFrame with copied columns to store output
         output = pd.DataFrame()
         output[unchanged_cols] = data[unchanged_cols].copy()
@@ -73,8 +74,8 @@ class Processor:
         )
         return output
 
-    @staticmethod
     def pivot(
+        self,
         data: pd.DataFrame,
         by: Literal[
             "diagnoses",
@@ -93,25 +94,35 @@ class Processor:
                     f"Invalid certainty values: {invalid_certs}. "
                     f"Valid values are: {VALID_CERTAINTIES}"
                 )
-        output = Processor._copy_static_columns(data)
+        output = self._copy_static_columns(data=data)
         match by:
             case "diagnoses":
-                output = Pivot.diagnoses(data, output, certainty_filter)
+                output = Pivot.diagnoses(
+                    data,
+                    output,
+                    certainty_filter,
+                    self.column_prefix,
+                )
             case "subcategories":
                 output = Pivot.subcategories(
-                    data, output, certainty_filter, include_details
+                    data, output, certainty_filter, include_details, self.column_prefix
                 )
             case "categories":
                 output = Pivot.categories(
-                    data, output, certainty_filter, include_details
+                    data, output, certainty_filter, include_details, self.column_prefix
                 )
             case "all":
-                output = Pivot.diagnoses(data, output, certainty_filter)
+                output = Pivot.diagnoses(
+                    data,
+                    output,
+                    certainty_filter,
+                    self.column_prefix,
+                )
                 output = Pivot.subcategories(
-                    data, output, certainty_filter, include_details
+                    data, output, certainty_filter, include_details, self.column_prefix
                 )
                 output = Pivot.categories(
-                    data, output, certainty_filter, include_details
+                    data, output, certainty_filter, include_details, self.column_prefix
                 )
             case _:
                 raise ValueError(f"Invalid value for 'by': {by}")

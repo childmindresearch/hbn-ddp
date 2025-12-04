@@ -52,9 +52,9 @@ class Pivot:
     """Class for pivoting the data."""
 
     DX_NS = [f"{n:02d}" for n in range(1, 11)]
-    DX_COLS = [f"Diagnosis_ClinicianConsensus,DX_{n}" for n in DX_NS]
-    DX_CAT_COLS = [f"Diagnosis_ClinicianConsensus,DX_{n}_Cat" for n in DX_NS]
-    DX_SUB_COLS = [f"Diagnosis_ClinicianConsensus,DX_{n}_Sub" for n in DX_NS]
+    # DX_COLS = [f"{self.column_prefix}DX_{n}" for n in DX_NS]
+    # DX_CAT_COLS = [f"{self.column_prefix}DX_{n}_Cat" for n in DX_NS]
+    # DX_SUB_COLS = [f"{self.column_prefix}DX_{n}_Sub" for n in DX_NS]
     INVALID_DX_VALS = {
         "nan",
         "No Diagnosis Given",
@@ -76,15 +76,17 @@ class Pivot:
         cls,
         data: pd.DataFrame,
         by: Literal["diagnoses", "subcategories", "categories"],
+        column_prefix: str | None,
     ) -> list[str]:
         """Get the unique values to create columns for the pivot."""
+        cls.column_prefix = column_prefix
         match by:
             case "diagnoses":
-                columns = cls.DX_COLS
+                columns = [f"{column_prefix}DX_{n}" for n in cls.DX_NS]
             case "categories":
-                columns = cls.DX_CAT_COLS
+                columns = [f"{column_prefix}DX_{n}_Cat" for n in cls.DX_NS]
             case "subcategories":
-                columns = cls.DX_SUB_COLS
+                columns = [f"{column_prefix}DX_{n}_Sub" for n in cls.DX_NS]
             case _:
                 columns = []
         # Filter for columns that exist in the data
@@ -134,7 +136,7 @@ class Pivot:
 
     @classmethod
     def _get_diagnosis_details(cls, data: pd.DataFrame, i: int, n: str) -> DxInfo:
-        col = f"Diagnosis_ClinicianConsensus,DX_{n}"
+        col = f"{cls.column_prefix}DX_{n}"
         details = DxInfo(
             diagnosis=data.at[i, col],
             sub=data.at[i, f"{col}_Sub"],
@@ -158,6 +160,7 @@ class Pivot:
         data: pd.DataFrame,
         output: pd.DataFrame,
         certainty_filter: Optional[list[str]] = None,
+        column_prefix: str | None = None,
     ) -> pd.DataFrame:
         """Pivot the data by diagnoses.
 
@@ -165,12 +168,13 @@ class Pivot:
             data: Input DataFrame with HBN diagnostic data
             output: Output DataFrame to append pivoted columns to
             certainty_filter: Optional list of certainty levels to include
+            column_prefix: Prefix for diagnosis columns in the data
 
         Returns:
             Output DataFrame with diagnosis columns added
         """
         repeated_vars = ["_Cat", "_Sub", "_Spec", "_ICD_Code", "_Past_Doc"]
-        dx_values = cls._get_values(data, "diagnoses")
+        dx_values = cls._get_values(data, "diagnoses", column_prefix)
         logger.info("Processing diagnoses")
 
         # Dictionary to collect all new columns
@@ -206,7 +210,7 @@ class Pivot:
                                 )
                                 repeated_data[var][i] = data.at[
                                     i,
-                                    f"Diagnosis_ClinicianConsensus,DX_{n}{original_var_name}",
+                                    f"{cls.column_prefix}DX_{n}{original_var_name}",
                                 ]
 
                             # If dx is found, do not need to check other dx numbers
@@ -232,6 +236,7 @@ class Pivot:
         output: pd.DataFrame,
         certainty_filter: Optional[list[str]] = None,
         include_details: bool = False,
+        column_prefix: str | None = None,
     ) -> pd.DataFrame:
         """Pivot the dataset on diagnostic subcategories.
 
@@ -241,11 +246,12 @@ class Pivot:
             certainty_filter: Optional list of certainty levels to include
             include_details: Whether to include diagnosis-level details.
             These will be stored in a single column per subcategory.
+            column_prefix: Prefix for diagnosis columns in the data
 
         Returns:
             Output DataFrame with subcategory columns added
         """
-        dx_values = cls._get_values(data, "subcategories")
+        dx_values = cls._get_values(data, "subcategories", column_prefix=column_prefix)
         logger.info("Processing diagnostic subcategories.")
 
         # Dictionary to collect all new columns
@@ -301,6 +307,7 @@ class Pivot:
         output: pd.DataFrame,
         certainty_filter: list[str] | None = None,
         include_details: bool = False,
+        column_prefix: str | None = None,
     ) -> pd.DataFrame:
         """Pivot the dataset on diagnostic categories.
 
@@ -310,11 +317,12 @@ class Pivot:
             certainty_filter: Optional list of certainty levels to include
             include_details: Whether to include diagnosis-level details.
             These will be stored in a single column per category.
+            column_prefix: Prefix for diagnosis columns in the data
 
         Returns:
             Output DataFrame with category columns added
         """
-        dx_values = cls._get_values(data, "categories")
+        dx_values = cls._get_values(data, "categories", column_prefix=column_prefix)
         logger.info("Processing diagnostic categories.")
 
         # Dictionary to collect all new columns
