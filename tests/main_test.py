@@ -21,15 +21,15 @@ def test_main_execution() -> None:
 
 def test_process() -> None:
     """Test the main processing function."""
-    data = HBNData.process(
-        input_path="tests/test_data.csv",
+    data = HBNData(input_path="tests/test_data.csv")
+    output = data.process(
         by="diagnoses",
         include_details=True,
         output_path=None,
         viz=False,
     )
-    assert data is not None
-    assert isinstance(data, pd.DataFrame)
+    assert output is not None
+    assert isinstance(output, pd.DataFrame)
     # Check for expected columns
     expected_columns = [
         "Identifiers",
@@ -39,4 +39,4 @@ def test_process() -> None:
         "ADHD_Hyperactive_Impulsive_Type_Time",
     ]
     for col in expected_columns:
-        assert col in data.columns
+        assert col in output.columns

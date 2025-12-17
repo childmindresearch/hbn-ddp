@@ -38,7 +38,7 @@ def test_data_path() -> Path:
 
 def test_load() -> None:
     """Test load function."""
-    data = Processor.load("tests/test_data.csv")
+    data = Processor().load(input_path="tests/test_data.csv")
     assert data is not None
     assert isinstance(data, pd.DataFrame)
 
@@ -48,7 +48,9 @@ def test_preprocess_categories(categories_df: pd.DataFrame) -> None:
     categories_df.iloc[1, 1] = None
     categories_df.iloc[2, 3] = np.nan
     assert categories_df.isnull().sum().sum() == 2
-    result = Processor._preprocess_categories(categories_df)
+    processor = Processor()
+    processor.column_prefix = "Diagnosis_ClinicianConsensus,"
+    result = processor._preprocess_categories(data=categories_df)
     # Check that the result is as expected
     assert result.isnull().sum().sum() == 0
     assert result.iloc[1, 1] == categories_df.iloc[1, 0]
@@ -74,7 +76,9 @@ def test_copy_static_columns() -> None:
             "Diagnosis_ClinicianConsensus,Year": ["Year_01", "Year_02"],
         }
     )
-    result = Processor._copy_static_columns(df)
+    processor = Processor()
+    processor.column_prefix = "Diagnosis_ClinicianConsensus,"
+    result = processor._copy_static_columns(data=df)
     # Check that IDs are copied correctly
     assert result["Identifiers"].to_list() == ["NDAR1", "NDAR2"]
     # Check that all expected columns are present
@@ -86,21 +90,23 @@ def test_copy_static_columns() -> None:
 
 def test_pivot() -> None:
     """Test pivot function."""
-    data = Processor.load("tests/test_data.csv")
+    processor = Processor()
+    processor.column_prefix = "Diagnosis_ClinicianConsensus,"
+    data = processor.load(input_path="tests/test_data.csv")
     # Test that invalid certainty filter raises error
     with pytest.raises(ValueError):
-        Processor.pivot(data, certainty_filter=["InvalidCertainty"])
+        processor.pivot(data, certainty_filter=["InvalidCertainty"])
     # Test that valid certainty filter works
-    output_filtered = Processor.pivot(
+    output_filtered = processor.pivot(
         data, certainty_filter=["Confirmed", "Presumptive"]
     )
     assert output_filtered is not None
     assert len(output_filtered) == len(data)
     # Test "by" options
     for by_option in ["diagnoses", "subcategories", "categories", "all"]:
-        output_by = Processor.pivot(data, by=by_option)  # type: ignore
+        output_by = processor.pivot(data, by=by_option)
         assert output_by is not None
         assert len(output_by) == len(data)
     # Test that invalid "by" option raises error
     with pytest.raises(ValueError):
-        Processor.pivot(data, by="invalid_option")  # type: ignore
+        processor.pivot(data, by="invalid_option")  # type: ignore
