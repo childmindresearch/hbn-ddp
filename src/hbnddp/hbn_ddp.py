@@ -17,12 +17,6 @@ class HBNData:
         self.input_path = input_path
         self.processor = Processor()
         self.data = self.processor.load(input_path)
-        # if "Diagnosis_ClinicianConsensus,DX_01" in self.data.columns:
-        #     self.column_prefix = "Diagnosis_ClinicianConsensus,"
-        # elif "DX_01" in self.data.columns:
-        #     self.column_prefix = ""
-        # else:
-        #     raise ValueError("No valid diagnosis columns found in data.")
 
     def process(
         self,
