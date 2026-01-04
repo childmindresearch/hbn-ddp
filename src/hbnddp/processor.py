@@ -32,10 +32,6 @@ class Processor:
             self.column_prefix = ""
         else:
             raise ValueError("No valid diagnosis columns found in data.")
-        # if data.filter(like="Diagnosis_ClinicianConsensus").columns.empty:
-        #     raise ValueError(
-        #         "No columns found with 'Diagnosis_ClinicianConsensus' in the name."
-        #     )
         return self._preprocess_categories(data=data)
 
     def _preprocess_categories(self, data: pd.DataFrame) -> pd.DataFrame:
