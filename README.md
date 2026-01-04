@@ -48,6 +48,6 @@ processed_data = data.process(
     output_path="path/to/output.csv"
 )
 ```
-[Notebook Example](https://github.com/childmindresearch/hbn-ddp/blob/main/examples/pivot_example.ipynb)
+[Notebook Example](./examples/pivot_example.ipynb)
 
 ## Links or References
