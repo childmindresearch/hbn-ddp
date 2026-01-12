@@ -2,7 +2,7 @@
 
 import itertools
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -25,9 +25,40 @@ class Pivot:
     """Class for pivoting the data."""
 
     DX_NS = [f"{n:02d}" for n in range(1, 11)]
+    DX_COLUMN_SUFFIXES = [
+        "ByHx",
+        "Cat",
+        "Code",
+        "Confirmed",
+        "Past_Doc",
+        "Presum",
+        "RC",
+        "RuleOut",
+        "Spec",
+        "Sub",
+        "Time",
+    ]
+
+    @classmethod
+    def _dx_column_names_by_type(cls) -> list[str]:
+        """Get the column names for the diagnosis columns."""
+        return {
+            suffix: [f"Diagnosis_ClinicianConsensus,DX_{n}_{suffix}" for n in cls.DX_NS]
+            for suffix in cls.DX_COLUMN_SUFFIXES
+        } + {"DX": [f"Diagnosis_ClinicianConsensus,DX_{n}" for n in cls.DX_NS]}
+
     DX_COLS = ["Diagnosis_ClinicianConsensus,DX_" + n for n in DX_NS]
-    DX_CAT_COLS = ["Diagnosis_ClinicianConsensus,DX_" + n + "_Cat" for n in DX_NS]
-    DX_SUB_COLS = ["Diagnosis_ClinicianConsensus,DX_" + n + "_Sub" for n in DX_NS]
+    DX_SUPPLEMENTAL_COLS = [
+        "Diagnosis_ClinicianConsensus,DX_" + n + "_" + suffix
+        for suffix in DX_COLUMN_SUFFIXES
+        for n in DX_NS
+    ]
+    # x = {
+    #     col_type: [f"Diagnosis_ClinicianConsensus,DX_{n}_{col_type}" for n in DX_NS]
+    #     for col_type in DX_COLUMN_SUFFIXES
+    # }
+    DX_CAT_COLS = [base + "_Cat" for base in DX_COLS]
+    DX_SUB_COLS = [base + "_Sub" for base in DX_COLS]
     INVALID_DX_VALS = {
         "nan",
         "No Diagnosis Given",
@@ -66,153 +97,70 @@ class Pivot:
         )
 
     @staticmethod
-    def _qualifier_series(data: pd.DataFrame) -> pd.Series:
+    def _qualifier_series(data: pd.DataFrame, col_prefix: str) -> pd.Series:
         """Get the qualifier for a diagnosis."""
-        for dx_number in Pivot.DX_NS:
-            col_prefix = "Diagnosis_ClinicianConsensus,DX_" + dx_number
-            byhx = (
-                (data.loc[:, col_prefix + "_Confirmed"] != 1)
-                & (data.loc[:, col_prefix + "_Presum"] != 1)
-                & (data.loc[:, col_prefix + "_RC"] != 1)
-                & (data.loc[:, col_prefix + "_RuleOut"] != 1)
-                & (data.loc[:, col_prefix + "_ByHx"] == 1)
-                & (data.loc[:, col_prefix + "_Time"] == 1)
-            )
-            confirmed = (
-                (data.loc[:, col_prefix + "_Confirmed"] == 1)
-                & (data.loc[:, col_prefix + "_Presum"] != 1)
-                & (data.loc[:, col_prefix + "_RC"] != 1)
-                & (data.loc[:, col_prefix + "_RuleOut"] != 1)
-                & (data.loc[:, col_prefix + "_ByHx"] != 1)
-                & (data.loc[:, col_prefix + "_Time"] == 1)
-            )
-            presum = (
-                (data.loc[:, col_prefix + "_Confirmed"] != 1)
-                & (data.loc[:, col_prefix + "_Presum"] == 1)
-                & (data.loc[:, col_prefix + "_RC"] != 1)
-                & (data.loc[:, col_prefix + "_RuleOut"] != 1)
-                & (data.loc[:, col_prefix + "_ByHx"] != 1)
-                & (data.loc[:, col_prefix + "_Time"] == 1)
-            )
-            rc = (
-                (data.loc[:, col_prefix + "_Confirmed"] != 1)
-                & (data.loc[:, col_prefix + "_Presum"] != 1)
-                & (data.loc[:, col_prefix + "_RC"] == 1)
-                & (data.loc[:, col_prefix + "_RuleOut"] != 1)
-                & (data.loc[:, col_prefix + "_ByHx"] != 1)
-                & (data.loc[:, col_prefix + "_Time"] == 1)
-            )
-            ruleout = (
-                (data.loc[:, col_prefix + "_Confirmed"] != 1)
-                & (data.loc[:, col_prefix + "_Presum"] != 1)
-                & (data.loc[:, col_prefix + "_RC"] != 1)
-                & (data.loc[:, col_prefix + "_RuleOut"] == 1)
-                & (data.loc[:, col_prefix + "_ByHx"] != 1)
-                & (data.loc[:, col_prefix + "_Time"] == 1)
-            )
-            past = (
-                (data.loc[:, col_prefix + "_Confirmed"] != 1)
-                & (data.loc[:, col_prefix + "_Presum"] != 1)
-                & (data.loc[:, col_prefix + "_RC"] != 1)
-                & (data.loc[:, col_prefix + "_RuleOut"] != 1)
-                & (data.loc[:, col_prefix + "_ByHx"] != 1)
-                & (data.loc[:, col_prefix + "_Time"] == 2)
-            )
-            output = pd.Series(index=data.index, dtype="object").fillna("Unknown")
-            output[past] = "Past"
-            output[ruleout] = "RuleOut"
-            output[rc] = "RC"
-            output[presum] = "Presumptive"
-            output[confirmed] = "Confirmed"
-            output[byhx] = "ByHx"
-            return output
+        suffixes = ("Confirmed", "Presum", "RC", "RuleOut", "ByHx", "Time")
+        confirmed_col, presum_col, rc_col, ruleout_col, byhx_col, time_col = (
+            col_prefix + "_" + suffix for suffix in suffixes
+        )
+        byhx = (
+            (data.loc[:, confirmed_col] != 1)
+            & (data.loc[:, presum_col] != 1)
+            & (data.loc[:, rc_col] != 1)
+            & (data.loc[:, ruleout_col] != 1)
+            & (data.loc[:, byhx_col] == 1)
+            & (data.loc[:, time_col] == 1)
+        )
+        confirmed = (
+            (data.loc[:, confirmed_col] == 1)
+            & (data.loc[:, presum_col] != 1)
+            & (data.loc[:, rc_col] != 1)
+            & (data.loc[:, ruleout_col] != 1)
+            & (data.loc[:, byhx_col] != 1)
+            & (data.loc[:, time_col] == 1)
+        )
+        presum = (
+            (data.loc[:, confirmed_col] != 1)
+            & (data.loc[:, presum_col] == 1)
+            & (data.loc[:, rc_col] != 1)
+            & (data.loc[:, ruleout_col] != 1)
+            & (data.loc[:, byhx_col] != 1)
+            & (data.loc[:, time_col] == 1)
+        )
+        rc = (
+            (data.loc[:, confirmed_col] != 1)
+            & (data.loc[:, presum_col] != 1)
+            & (data.loc[:, rc_col] == 1)
+            & (data.loc[:, ruleout_col] != 1)
+            & (data.loc[:, byhx_col] != 1)
+            & (data.loc[:, time_col] == 1)
+        )
+        ruleout = (
+            (data.loc[:, confirmed_col] != 1)
+            & (data.loc[:, presum_col] != 1)
+            & (data.loc[:, rc_col] != 1)
+            & (data.loc[:, ruleout_col] == 1)
+            & (data.loc[:, byhx_col] != 1)
+            & (data.loc[:, time_col] == 1)
+        )
+        past = (
+            (data.loc[:, confirmed_col] != 1)
+            & (data.loc[:, presum_col] != 1)
+            & (data.loc[:, rc_col] != 1)
+            & (data.loc[:, ruleout_col] != 1)
+            & (data.loc[:, byhx_col] != 1)
+            & (data.loc[:, time_col] == 2)
+        )
 
-    @staticmethod
-    def _set_qualifier(data: pd.DataFrame, i: int, col: str) -> str:
-        """Get the qualifier for a diagnosis."""
-        # TODO: Consider using an enum for the certainty levels.
-        # TODO: Rather than indexing into df every time, I think this would be clearer
-        # if each of the conditions were assigned to variables that can be used in the
-        # logic.
-        # TODO: Another potential simplification would be to check sum(bool_values) == 1
-        # to ensure only one of the conditions is met.
-
-        byhx = all(
-            [
-                data.at[i, col + "_Confirmed"] != 1,
-                data.at[i, col + "_Presum"] != 1,
-                data.at[i, col + "_RC"] != 1,
-                data.at[i, col + "_RuleOut"] != 1,
-                data.at[i, col + "_ByHx"] == 1,
-                data.at[i, col + "_Time"] == 1,
-            ]
+        data.assign(qualifier="ByHx").assign(
+            qualifier=data.qualifier.where(byhx, "Confirmed")
+            .where(confirmed, "Presumptive")
+            .where(presum, "RC")
+            .where(rc, "RuleOut")
+            .where(ruleout, "Past")
+            .where(past, "Unknown")
         )
-        confirmed = all(
-            [
-                data.at[i, col + "_Confirmed"] == 1,
-                data.at[i, col + "_Presum"] != 1,
-                data.at[i, col + "_RC"] != 1,
-                data.at[i, col + "_RuleOut"] != 1,
-                data.at[i, col + "_ByHx"] != 1,
-                data.at[i, col + "_Time"] == 1,
-            ]
-        )
-        presum = all(
-            [
-                data.at[i, col + "_Confirmed"] != 1,
-                data.at[i, col + "_Presum"] == 1,
-                data.at[i, col + "_RC"] != 1,
-                data.at[i, col + "_RuleOut"] != 1,
-                data.at[i, col + "_ByHx"] != 1,
-                data.at[i, col + "_Time"] == 1,
-            ]
-        )
-        rc = all(
-            [
-                data.at[i, col + "_Confirmed"] != 1,
-                data.at[i, col + "_Presum"] != 1,
-                data.at[i, col + "_RC"] == 1,
-                data.at[i, col + "_RuleOut"] != 1,
-                data.at[i, col + "_ByHx"] != 1,
-                data.at[i, col + "_Time"] == 1,
-            ]
-        )
-        ruleout = all(
-            [
-                data.at[i, col + "_Confirmed"] != 1,
-                data.at[i, col + "_Presum"] != 1,
-                data.at[i, col + "_RC"] != 1,
-                data.at[i, col + "_RuleOut"] == 1,
-                data.at[i, col + "_ByHx"] != 1,
-                data.at[i, col + "_Time"] == 1,
-            ]
-        )
-        past = all(
-            [
-                data.at[i, col + "_Confirmed"] != 1,
-                data.at[i, col + "_Presum"] != 1,
-                data.at[i, col + "_RC"] != 1,
-                data.at[i, col + "_RuleOut"] != 1,
-                data.at[i, col + "_ByHx"] != 1,
-                data.at[i, col + "_Time"] == 2,
-            ]
-        )
-        if byhx:
-            qual = "ByHx"
-        elif confirmed:
-            qual = "Confirmed"
-        elif presum:
-            qual = "Presumptive"
-        elif rc:
-            qual = "RC"
-        elif ruleout:
-            qual = "RuleOut"
-        elif past:
-            qual = "Past"
-        # if all missing, or conflicting certainties are present, assign 'Unknown'
-        else:
-            qual = "Unknown"
-        return qual
+        return data.qualifier
 
     @classmethod
     def _get_diagnosis_details(cls, data: pd.DataFrame, i: int, n: str) -> DxInfo:
@@ -244,7 +192,6 @@ class Pivot:
         dx_values = cls._get_values(data, "diagnoses")
         print("Diagnoses in dataset:")
         for dx_val in dx_values:
-            print(dx_val)
             # TODO: Try concatenating all new values at once for performance
             output[dx_val + "_DiagnosisPresent"] = 0
             output[dx_val + "_Certainty"] = None
@@ -254,7 +201,7 @@ class Pivot:
                 details = cls._get_diagnosis_details(data, i, n)
                 col = f"Diagnosis_ClinicianConsensus,DX_{n}"
                 # locate presence of specific diagnosis
-                if details.diagnosis == dx_val:
+                if cls._clean_dx_value(details.diagnosis) == dx_val:
                     # apply filter if selected and set presence of diagnosis
                     if cls._filter_pass(details.qual, qualifier_filter):
                         output.at[i, f"{dx_val}_DiagnosisPresent"] = 1
@@ -308,18 +255,6 @@ class Pivot:
         return output
 
     @classmethod
-    def _qualifier_map(cls, row: pd.Series) -> pd.Series:
-        """Map the qualifiers to a boolean value."""
-        cols = [f"Diagnosis_ClinicianConsensus,DX_{n}" for n in cls.DX_NS]
-        output = pd.Series(index=row.index, dtype=bool)
-        for c in cols:
-            output.loc[[f"DX_Qualifier_{n}" for n in cls.DX_NS]] = [
-                # TODO Update set_qualifier to use take Series
-                cls._set_qualifier(row, n, c)
-                for n in cls.DX_NS
-            ]
-
-    @classmethod
     def categories(
         cls,
         data: pd.DataFrame,
@@ -343,21 +278,46 @@ class Pivot:
         dx_values = (
             data.loc[:, cls.DX_CAT_COLS].melt()["value"].drop_duplicates().to_list()
         )
-        data.loc[:, [f"DX_Qualifier_{n}" for n in cls.DX_NS]] = (
-            True
-            if qualifier_filter is None
-            else data.loc[:, cls.DX_CAT_COLS].apply(
-                lambda c: cls._qualifier_map, axis=1
-            )
+        pd.lreshape(
+            data,
+            groups={
+                "Diagnosis_ClinicianConsensus,DX": cls.DX_COLS,
+                "Diagnosis_ClinicianConsensus,DX_Cat": cls.DX_CAT_COLS,
+                "Diagnosis_ClinicianConsensus,DX_Sub": cls.DX_SUB_COLS,
+            },
         )
-        # TODO integrate qualifier filter
-        for dx_val in dx_values:
-            data.loc[:, dx_val + "_CategoryPresent"] = (
-                data.loc[:, cls.DX_CAT_COLS]
-                .apply(lambda c: c.str.contains(dx_val, na=False, regex=False))
-                .apply(lambda c: c.any(), axis=1)
-                .astype(int)
-            )
+        columns = [
+            "Diagnosis_ClinicianConsensus,DX_01",
+            "Diagnosis_ClinicianConsensus,DX_01_ByHx",
+            "Diagnosis_ClinicianConsensus,DX_01_Cat",
+            "Diagnosis_ClinicianConsensus,DX_01_Code",
+            "Diagnosis_ClinicianConsensus,DX_01_Confirmed",
+            "Diagnosis_ClinicianConsensus,DX_01_Past_Doc",
+            "Diagnosis_ClinicianConsensus,DX_01_Presum",
+            "Diagnosis_ClinicianConsensus,DX_01_RC",
+            "Diagnosis_ClinicianConsensus,DX_01_RuleOut",
+            "Diagnosis_ClinicianConsensus,DX_01_Spec",
+            "Diagnosis_ClinicianConsensus,DX_01_Sub",
+            "Diagnosis_ClinicianConsensus,DX_01_Time",
+        ]
+
+        # data.loc[:, [f"DX_Qualifier_{n}" for n in cls.DX_NS]] = (
+        #     True
+        #     if qualifier_filter is None
+        #     else data.loc[:, cls.DX_CAT_COLS].apply(
+        #         lambda c: cls._qualifier_map, axis=1
+        #     )
+        # )
+        # for col in cls.DX_CAT_COLS:
+        #     data.loc[:, f"{col}_Qual"] = cls._qualifier_series(data, col)
+        # # TODO integrate qualifier filter
+        # for dx_val in dx_values:
+        #     data.loc[:, dx_val + "_CategoryPresent"] = (
+        #         data.loc[:, cls.DX_CAT_COLS]
+        #         .apply(lambda c: c.str.contains(dx_val, na=False, regex=False))
+        #         .apply(lambda c: c.any(), axis=1)
+        #         .astype(int)
+        #     )
         if include_details:
             # column for diagnostic level details
             data.loc[:, [dx + "_Details" for dx in dx_values]] = ""
