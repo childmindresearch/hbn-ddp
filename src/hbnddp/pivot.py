@@ -74,16 +74,19 @@ class Pivot:
         cls,
         data: pd.DataFrame,
         by: Literal["diagnoses", "subcategories", "categories"],
-        column_prefix: str | None,
+        column_prefix: str,
     ) -> list[str]:
         """Get the unique values to create columns for the pivot."""
+
         match by:
             case "diagnoses":
-                columns = [f"{column_prefix}DX_{n}" for n in cls.DX_NS]
+                columns = [cls._dx_column_name(column_prefix, n) for n in cls.DX_NS]
             case "categories":
-                columns = [f"{column_prefix}DX_{n}_Cat" for n in cls.DX_NS]
+                columns = [cls._dx_column_name(column_prefix, n) for n in cls.DX_NS]
             case "subcategories":
-                columns = [f"{column_prefix}DX_{n}_Sub" for n in cls.DX_NS]
+                columns = [
+                    cls._dx_column_name(column_prefix, n) + "_Sub" for n in cls.DX_NS
+                ]
             case _:
                 columns = []
         # Filter for columns that exist in the data
@@ -131,11 +134,13 @@ class Pivot:
             time = "Unknown"
         return time
 
+    @staticmethod
+    def _dx_column_name(column_prefix: str, n: str) -> str:
+        """Return column name with prefix and diagnosis number."""
+        return f"{column_prefix}DX_{n}"
+
     @classmethod
-    def _get_diagnosis_details(
-        cls, data: pd.DataFrame, i: int, n: str, column_prefix: str | None
-    ) -> DxInfo:
-        col = f"{column_prefix}DX_{n}"
+    def _get_diagnosis_details(cls, data: pd.DataFrame, i: int, col: str) -> DxInfo:
         details = DxInfo(
             diagnosis=data.at[i, col],
             sub=data.at[i, f"{col}_Sub"],
@@ -158,8 +163,8 @@ class Pivot:
         cls,
         data: pd.DataFrame,
         output: pd.DataFrame,
+        column_prefix: str,
         certainty_filter: Optional[list[str]] = None,
-        column_prefix: str | None = None,
     ) -> pd.DataFrame:
         """Pivot the data by diagnoses.
 
@@ -180,7 +185,7 @@ class Pivot:
         all_new_cols: dict[str, Any] = {}
 
         for dx_val in dx_values:
-            col_name = cls._clean_dx_value(dx_val)
+            new_col = cls._clean_dx_value(dx_val)
 
             # Collect all updates for this diagnosis
             present_data = [0] * len(data)
@@ -192,7 +197,8 @@ class Pivot:
 
             for i in range(len(data)):
                 for n in cls.DX_NS:
-                    details = cls._get_diagnosis_details(data, i, n, column_prefix)
+                    col = cls._dx_column_name(column_prefix, n)
+                    details = cls._get_diagnosis_details(data, i, col)
 
                     # Check if this row has the specific diagnosis
                     if details.diagnosis == dx_val:
@@ -209,18 +215,18 @@ class Pivot:
                                 )
                                 repeated_data[var][i] = data.at[
                                     i,
-                                    f"{column_prefix}DX_{n}{original_var_name}",
+                                    f"{col}{original_var_name}",
                                 ]
 
                             # If dx is found, do not need to check other dx numbers
                             break
 
             # Store columns for this diagnosis
-            all_new_cols[f"{col_name}_DiagnosisPresent"] = present_data
-            all_new_cols[f"{col_name}_Certainty"] = certainty_data
-            all_new_cols[f"{col_name}_Time"] = time_data
+            all_new_cols[f"{new_col}_DiagnosisPresent"] = present_data
+            all_new_cols[f"{new_col}_Certainty"] = certainty_data
+            all_new_cols[f"{new_col}_Time"] = time_data
             for var in repeated_vars:
-                all_new_cols[f"{col_name}{var}"] = repeated_data[var]
+                all_new_cols[f"{new_col}{var}"] = repeated_data[var]
 
         # Add all new columns at once to avoid fragmentation
         new_df = pd.DataFrame(all_new_cols, index=output.index)
@@ -233,9 +239,9 @@ class Pivot:
         cls,
         data: pd.DataFrame,
         output: pd.DataFrame,
+        column_prefix: str,
         certainty_filter: Optional[list[str]] = None,
         include_details: bool = False,
-        column_prefix: str | None = None,
     ) -> pd.DataFrame:
         """Pivot the dataset on diagnostic subcategories.
 
@@ -257,7 +263,7 @@ class Pivot:
         all_new_cols: dict[str, Any] = {}
 
         for dx_val in dx_values:
-            col_name = cls._clean_dx_value(dx_val)
+            new_col = cls._clean_dx_value(dx_val)
 
             # Collect all updates for this subcategory
             present_data = [0] * len(data)
@@ -266,7 +272,8 @@ class Pivot:
             for i in range(len(data)):
                 cat_details = []
                 for n in cls.DX_NS:
-                    details = cls._get_diagnosis_details(data, i, n, column_prefix)
+                    col = cls._dx_column_name(column_prefix, n)
+                    details = cls._get_diagnosis_details(data, i, col)
                     if details.sub == dx_val:
                         # Apply filter if selected
                         if cls._filter_pass(details.certainty, certainty_filter):
@@ -289,9 +296,9 @@ class Pivot:
                     details_data[i] = str(cat_details).strip("[]")
 
             # Store columns for this subcategory
-            all_new_cols[f"{col_name}_SubcategoryPresent"] = present_data
+            all_new_cols[f"{new_col}_SubcategoryPresent"] = present_data
             if include_details:
-                all_new_cols[f"{col_name}_Details"] = details_data
+                all_new_cols[f"{new_col}_Details"] = details_data
 
         # Add all new columns at once to avoid fragmentation
         new_df = pd.DataFrame(all_new_cols, index=output.index)
@@ -304,9 +311,9 @@ class Pivot:
         cls,
         data: pd.DataFrame,
         output: pd.DataFrame,
+        column_prefix: str,
         certainty_filter: list[str] | None = None,
         include_details: bool = False,
-        column_prefix: str | None = None,
     ) -> pd.DataFrame:
         """Pivot the dataset on diagnostic categories.
 
@@ -328,7 +335,7 @@ class Pivot:
         all_new_cols: dict[str, Any] = {}
 
         for dx_val in dx_values:
-            col_name = cls._clean_dx_value(dx_val)
+            new_col = cls._clean_dx_value(dx_val)
 
             # Collect all updates for this category
             present_data = [0] * len(data)
@@ -337,7 +344,8 @@ class Pivot:
             for i in range(len(data)):
                 cat_details = []
                 for n in cls.DX_NS:
-                    details = cls._get_diagnosis_details(data, i, n, column_prefix)
+                    col = cls._dx_column_name(column_prefix, n)
+                    details = cls._get_diagnosis_details(data, i, col)
                     if details.cat == dx_val:
                         # Apply filter if selected
                         if cls._filter_pass(details.certainty, certainty_filter):
@@ -361,9 +369,9 @@ class Pivot:
                     details_data[i] = str(cat_details).strip("[]")
 
             # Store columns for this category
-            all_new_cols[f"{col_name}_CategoryPresent"] = present_data
+            all_new_cols[f"{new_col}_CategoryPresent"] = present_data
             if include_details:
-                all_new_cols[f"{col_name}_Details"] = details_data
+                all_new_cols[f"{new_col}_Details"] = details_data
 
         # Add all new columns at once to avoid fragmentation
         new_df = pd.DataFrame(all_new_cols, index=output.index)

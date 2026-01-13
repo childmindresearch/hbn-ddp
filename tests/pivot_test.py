@@ -3,10 +3,11 @@
 import pandas as pd
 
 from hbnddp.pivot import Pivot
-from hbnddp.processor import Processor
+from hbnddp.hbn_ddp import HBNData
 
-test_data = Processor().load(input_path="tests/test_data.csv")
-test_output = Processor()._copy_static_columns(data=test_data)
+hbn_data = HBNData.create(input_path="tests/test_data.csv")
+test_data = hbn_data.data
+test_output = hbn_data._copy_static_columns(data=test_data)
 
 # Expected unique diagnoses in test data
 expected_diagnoses = list(
@@ -228,9 +229,11 @@ def test_diagnoses() -> None:
         }
     )
 
-    processor = Processor()
-    processor.column_prefix = "Diagnosis_ClinicianConsensus,"
-    single_dx_test_output = processor._copy_static_columns(single_dx_test_data)
+    hbn_data = HBNData(
+        data=single_dx_test_data, column_prefix="Diagnosis_ClinicianConsensus,"
+    )
+    hbn_data.column_prefix = "Diagnosis_ClinicianConsensus,"
+    single_dx_test_output = hbn_data._copy_static_columns(single_dx_test_data)
     output = Pivot.diagnoses(
         single_dx_test_data,
         single_dx_test_output,

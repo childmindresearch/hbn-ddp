@@ -14,7 +14,7 @@ app = typer.Typer(
 def main() -> None:
     """Main function for CLI run."""
     args = Interactive.prompt()
-    data = HBNData(input_path=args["input_path"])
+    data = HBNData.create(args["input_path"])
     data.process(
         output_path=args["output_path"],
         by=args["by"],
