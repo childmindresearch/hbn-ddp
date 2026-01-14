@@ -7,7 +7,6 @@ from hbnddp.viz import _bar, _clean_label
 def test_bar() -> None:
     """Test bar plot function."""
     hbn_data = HBNData.create(input_path="tests/test_data.csv")
-    data = hbn_data.data
     test_result = hbn_data.pivot(by="all")
     # Test individual bar plots
     _bar(test_result, col_type="DiagnosisPresent")

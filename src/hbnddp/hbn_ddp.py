@@ -29,7 +29,7 @@ class HBNData:
 
     @classmethod
     def create(cls, input_path: str) -> "HBNData":
-        """Load the data and create an HBNData instance"""
+        """Load the data and create an HBNData instance."""
         path = Path(input_path)
         if not path.exists():
             raise FileNotFoundError(f"File {path} not found.")

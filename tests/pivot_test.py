@@ -2,8 +2,8 @@
 
 import pandas as pd
 
-from hbnddp.pivot import Pivot
 from hbnddp.hbn_ddp import HBNData
+from hbnddp.pivot import Pivot
 
 hbn_data = HBNData.create(input_path="tests/test_data.csv")
 test_data = hbn_data.data

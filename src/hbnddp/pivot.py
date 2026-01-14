@@ -77,7 +77,6 @@ class Pivot:
         column_prefix: str,
     ) -> list[str]:
         """Get the unique values to create columns for the pivot."""
-
         match by:
             case "diagnoses":
                 columns = [cls._dx_column_name(column_prefix, n) for n in cls.DX_NS]
