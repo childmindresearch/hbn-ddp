@@ -19,7 +19,7 @@ The raw HBN dataset includes final clinician diagnostic data given across ten nu
 
 <p align="center">↓</p>
 
-Neurodevelopmental_Disorders_CategoryPresent | ADHD_Hyperactive_Type_DiagnosisPresent | ADHD_Hyperactive_Type_Time | ADHD_Hyperactive_Type_Certainty | Autism_Spectrum_DisorderPresent | Autism_Spectrum_Time | Autism_Spectrum_Certainty | Anxiety_Disorders_CategoryPresent | Selective_Mutism_DisorderPresent | Selective_Mutism_Time | Selective_Mutism_Certainty |
+Neurodevelopmental_Disorders_CategoryPresent | ADHD_Hyperactive_Type_DiagnosisPresent | ADHD_Hyperactive_Type_Time | ADHD_Hyperactive_Type_Certainty | Autism_Spectrum_DiagnosisPresent | Autism_Spectrum_Time | Autism_Spectrum_Certainty | Anxiety_Disorders_CategoryPresent | Selective_Mutism_DiagnosisPresent | Selective_Mutism_Time | Selective_Mutism_Certainty |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | 1 | Current | Confirmed | 0 |  |  | 0 | 0 |  |  |
 | 1 | 0 |  |  | 1 | Current | Rule-Out | 1 | 1 | Past | Confirmed |
