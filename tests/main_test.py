@@ -65,9 +65,7 @@ def test_preprocess_categories(categories_df: pd.DataFrame) -> None:
     hbn_data = HBNData(
         data=categories_df, column_prefix="Diagnosis_ClinicianConsensus,"
     )
-    result = hbn_data._preprocess_categories(
-        data=hbn_data.data, column_prefix=hbn_data.column_prefix
-    )
+    result = hbn_data._preprocessed_data
     # Check that the result is as expected
     assert result.isnull().sum().sum() == 0
     assert result.iloc[1, 1] == categories_df.iloc[1, 0]
@@ -94,7 +92,9 @@ def test_copy_static_columns() -> None:
         }
     )
     hbn_data = HBNData(data=df, column_prefix="Diagnosis_ClinicianConsensus,")
-    result = hbn_data._copy_static_columns(data=df)
+    result = hbn_data._copy_static_columns(
+        data=df, column_prefix=hbn_data.column_prefix
+    )
     # Check that IDs are copied correctly
     assert result["Identifiers"].to_list() == ["NDAR1", "NDAR2"]
     # Check that all expected columns are present

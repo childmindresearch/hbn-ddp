@@ -7,7 +7,8 @@ from hbnddp.pivot import Pivot
 
 hbn_data = HBNData.create(input_path="tests/test_data.csv")
 test_data = hbn_data.data
-test_output = hbn_data._copy_static_columns(data=test_data)
+column_prefix = hbn_data.column_prefix
+test_output = hbn_data._copy_static_columns(data=test_data, column_prefix=column_prefix)
 
 # Expected unique diagnoses in test data
 expected_diagnoses = list(
@@ -232,8 +233,9 @@ def test_diagnoses() -> None:
     hbn_data = HBNData(
         data=single_dx_test_data, column_prefix="Diagnosis_ClinicianConsensus,"
     )
-    hbn_data.column_prefix = "Diagnosis_ClinicianConsensus,"
-    single_dx_test_output = hbn_data._copy_static_columns(single_dx_test_data)
+    single_dx_test_output = hbn_data._copy_static_columns(
+        single_dx_test_data, column_prefix=hbn_data.column_prefix
+    )
     output = Pivot.diagnoses(
         single_dx_test_data,
         single_dx_test_output,

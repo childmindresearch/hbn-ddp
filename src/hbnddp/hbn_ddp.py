@@ -46,29 +46,30 @@ class HBNData:
 
         return cls(input_path=input_path, data=data, column_prefix=column_prefix)
 
-    @staticmethod
-    def _preprocess_categories(data: pd.DataFrame, column_prefix: str) -> pd.DataFrame:
+    @property
+    def _preprocessed_data(self) -> pd.DataFrame:
         """Preprocess the categories by filling missing subcategories."""
         cat_sub_cols = [
             (
-                f"{column_prefix}DX_{n:02d}_Cat",
-                f"{column_prefix}DX_{n:02d}_Sub",
+                f"{self.column_prefix}DX_{n:02d}_Cat",
+                f"{self.column_prefix}DX_{n:02d}_Sub",
             )
             for n in range(1, 11)
         ]
-        processed_data = data.copy()
+        processed_data = self.data.copy()
         for cat, sub in cat_sub_cols:
             processed_data[sub] = processed_data[sub].fillna(processed_data[cat])
         return processed_data
 
-    def _copy_static_columns(self, data: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def _copy_static_columns(data: pd.DataFrame, column_prefix: str) -> pd.DataFrame:
         """Copy the subject data for output."""
         # Diagnosis_ClinicianConsensus columns that are not affected by pivoting
         unchanged_dx_cols = [
-            f"{self.column_prefix}NoDX",
-            f"{self.column_prefix}Season",
-            f"{self.column_prefix}Site",
-            f"{self.column_prefix}Year",
+            f"{column_prefix}NoDX",
+            f"{column_prefix}Season",
+            f"{column_prefix}Site",
+            f"{column_prefix}Year",
         ]
         # Copy ID column, any present unchanged DX columns,
         # and any columns from other intruments.
@@ -97,9 +98,8 @@ class HBNData:
     ) -> pd.DataFrame:
         """Pivot and filter the data."""
         # fill missing subcategories before pivoting
-        data = self._preprocess_categories(
-            data=self.data, column_prefix=self.column_prefix
-        )
+        data = self._preprocessed_data
+        column_prefix = self.column_prefix
         if certainty_filter is not None:
             invalid_certs = set(certainty_filter) - set(VALID_CERTAINTIES)
             if invalid_certs:
@@ -107,7 +107,7 @@ class HBNData:
                     f"Invalid certainty values: {invalid_certs}. "
                     f"Valid values are: {VALID_CERTAINTIES}"
                 )
-        output = self._copy_static_columns(data=data)
+        output = self._copy_static_columns(data=data, column_prefix=column_prefix)
         match by:
             case "diagnoses":
                 output = Pivot.diagnoses(

@@ -62,8 +62,8 @@ class Pivot:
         np.nan,
     }
 
-    @classmethod
-    def _clean_dx_value(cls, value: str) -> str:
+    @staticmethod
+    def _clean_dx_value(value: str) -> str:
         """Clean diagnosis value to use as column name."""
         cleaned = re.sub(r"[^\w\s/-]", "", str(value).strip())
         cleaned = cleaned.replace("/", "_").replace("-", "_")
