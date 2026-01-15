@@ -1,13 +1,13 @@
 """Unit tests for Visualization functions in hbnpreprocess.viz module."""
 
-from hbnddp.processor import Processor
+from hbnddp.hbn_ddp import HBNData
 from hbnddp.viz import _bar, _clean_label
 
 
 def test_bar() -> None:
     """Test bar plot function."""
-    data = Processor.load("tests/test_data.csv")
-    test_result = Processor.pivot(data, by="all")
+    hbn_data = HBNData.create(input_path="tests/test_data.csv")
+    test_result = hbn_data.pivot(by="all")
     # Test individual bar plots
     _bar(test_result, col_type="DiagnosisPresent")
     _bar(test_result, col_type="CategoryPresent")

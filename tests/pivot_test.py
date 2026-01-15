@@ -2,20 +2,24 @@
 
 import pandas as pd
 
+from hbnddp.hbn_ddp import HBNData
 from hbnddp.pivot import Pivot
-from hbnddp.processor import Processor
 
-test_data = Processor.load("tests/test_data.csv")
-test_output = Processor._copy_static_columns(test_data)
+hbn_data = HBNData.create(input_path="tests/test_data.csv")
+test_data = hbn_data.data
+column_prefix = hbn_data.column_prefix
+test_output = hbn_data._copy_static_columns(data=test_data, column_prefix=column_prefix)
 
 # Expected unique diagnoses in test data
-expected_diagnoses = pd.unique(
-    test_data[
-        [
-            f"Diagnosis_ClinicianConsensus,DX_{n}"
-            for n in [f"{n:02d}" for n in range(1, 11)]
-        ]
-    ].values.ravel()
+expected_diagnoses = list(
+    pd.unique(
+        test_data[
+            [
+                f"Diagnosis_ClinicianConsensus,DX_{n}"
+                for n in [f"{n:02d}" for n in range(1, 11)]
+            ]
+        ].values.ravel()
+    )
 )
 # Filter out invalid diagnosis values
 expected_diagnoses = [
@@ -44,16 +48,28 @@ def test_clean_dx_value() -> None:
 
 def test_get_values() -> None:
     """Test getting unique diagnosis values."""
-    dx_values = Pivot._get_values(test_data, "diagnoses")
+    dx_values = Pivot._get_values(
+        test_data,
+        "diagnoses",
+        column_prefix="Diagnosis_ClinicianConsensus,",
+    )
     assert dx_values is not None
     assert callable(dx_values) is False, "dx_values should not be a function"
     assert all(isinstance(val, str) for val in dx_values)
     assert set(expected_diagnoses) == set(dx_values)
-    dx_values = Pivot._get_values(test_data, "categories")
+    dx_values = Pivot._get_values(
+        test_data,
+        "categories",
+        column_prefix="Diagnosis_ClinicianConsensus,",
+    )
     assert dx_values is not None
     assert all(isinstance(val, str) for val in dx_values)
 
-    dx_values = Pivot._get_values(test_data, "subcategories")
+    dx_values = Pivot._get_values(
+        test_data,
+        "subcategories",
+        column_prefix="Diagnosis_ClinicianConsensus,",
+    )
     assert dx_values is not None
     assert all(isinstance(val, str) for val in dx_values)
 
@@ -180,7 +196,11 @@ def test_filter_certainty() -> None:
 
 def test_diagnoses() -> None:
     """Test diagnoses pivot."""
-    output = Pivot.diagnoses(test_data, test_output)
+    output = Pivot.diagnoses(
+        test_data,
+        test_output,
+        column_prefix="Diagnosis_ClinicianConsensus,",
+    )
     assert output is not None
     assert output is not test_output
     assert len(output) == len(test_data)
@@ -210,8 +230,17 @@ def test_diagnoses() -> None:
         }
     )
 
-    single_dx_test_output = Processor._copy_static_columns(single_dx_test_data)
-    output = Pivot.diagnoses(single_dx_test_data, single_dx_test_output)
+    hbn_data = HBNData(
+        data=single_dx_test_data, column_prefix="Diagnosis_ClinicianConsensus,"
+    )
+    single_dx_test_output = hbn_data._copy_static_columns(
+        single_dx_test_data, column_prefix=hbn_data.column_prefix
+    )
+    output = Pivot.diagnoses(
+        single_dx_test_data,
+        single_dx_test_output,
+        column_prefix="Diagnosis_ClinicianConsensus,",
+    )
     assert len(output.columns) == len(single_dx_test_output.columns) + 8
     assert output.at[0, "ADHD_Hyperactive_Impulsive_Type_DiagnosisPresent"] == 1
     assert (
