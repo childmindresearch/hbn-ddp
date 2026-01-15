@@ -168,7 +168,7 @@ class HBNData:
         ] = "all",
         certainty_filter: list[str] | None = None,
         include_details: bool = False,
-        viz: bool = True,
+        viz: bool = False,
     ) -> pd.DataFrame:
         """Process the HBN clinician consensus diagnosis data by pivoting.
 
@@ -183,7 +183,7 @@ class HBNData:
             include_details: When pivoting by category or subcategory, whether to
             include diagnosis level details in a separate column as a dictionary.
             viz: Whether to visualize the data. Displays and saves a bar plot showing
-            the incidence of diagnoses or categories.
+            the incidence of diagnoses or categories. Default is False.
 
         Returns:
             The processed data.
