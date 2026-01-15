@@ -43,9 +43,16 @@ hbnddp
 ```python
 from hbnddp import HBNData
 
-data = HBNData(input_path="path/to/data.csv")
+data = HBNData.create(input_path="path/to/data.csv")
 processed_data = data.process(
-    output_path="path/to/output.csv"
+    # change to output path if you want to save the results
+    output_path="path/to/output.csv",
+    # pivot on diagnoses, subcategories, categories or all
+    by="diagnoses",
+    # add certainty filter if desired
+    certainty_filter=None,
+    # set True to visualize results
+    viz=True,
 )
 ```
 [Notebook Example](./examples/pivot_example.ipynb)
