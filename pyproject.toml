@@ -7,7 +7,7 @@ requires-python = ">3.11"
 readme = "README.md"
 dependencies = [
   "matplotlib>=3.10.0,<4",
-  "pandas>=2.2.3,<3",
+  "pandas>=2.2.3,<4",
   "questionary>=2.1.0,<3",
   "kaleido==1.2.0",
   "pillow>=11.1.0,<13",
